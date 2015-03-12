@@ -1,32 +1,29 @@
-#
-# Makefile
-#   This makefile only works right now with gmake :(
-#
+# Makefile borrowed from the iiag project, thanks to sjrct
 
-SHELL	      = bash
-CLIENT_TARGET = fermat
-CC            = clang
-YACC          = bison
-LEX           = flex
+SHELL  = bash
+TARGET = fermat
+CC     = clang
+YACC   = bison
+LEX    = flex
 
 # Flags that are used regardless of compiliation options go here
-CLIENT_CCFL := -c -g -Wall
-CLIENT_LDFL := -Wall
+CCFL := -c -g -Wall
+LDFL := -Wall
 
-CLIENT_SRCS := scope.c node.c tree.c
+SRCS := scope.c node.c tree.c
 
 # Construct file lists
-CLIENT_OBJS := $(addprefix build/obj/,$(patsubst %.c,%.o,$(CLIENT_SRCS)))
-CLIENT_DEPS := $(addprefix build/dep/,$(patsubst %.c,%.d,$(CLIENT_SRCS)))
-CLIENT_SRCS := $(addprefix src/,$(CLIENT_SRCS))
+OBJS := $(addprefix build/obj/,$(patsubst %.c,%.o,$(SRCS)))
+DEPS := $(addprefix build/dep/,$(patsubst %.c,%.d,$(SRCS)))
+SRCS := $(addprefix src/,$(SRCS))
 
 # All the make rules
 .PHONY: all clean install
 
-all: $(CLIENT_TARGET)
+all: $(TARGET)
 
-$(CLIENT_TARGET): src/parser.tab.c src/lexer.c $(CLIENT_OBJS) 
-	$(CC) $^ $(CLIENT_LDFL) -o $(CLIENT_TARGET)
+$(TARGET): src/parser.tab.c src/lexer.c $(OBJS) 
+	$(CC) $^ $(LDFL) -o $(TARGET)
 
 src/parser.tab.c: src/parser.y
 	$(YACC) $< --defines=src/parser.tab.h --output=$@ -v
@@ -38,7 +35,7 @@ build/obj/%.o: src/%.c
 	@ mkdir -p $(@D)
 	@ mkdir -p $(subst obj,dep,$(@D))
 	@ $(CC) -MM -MP -MT $@ -MF $(patsubst %.o,%.d,$(subst obj,dep,$@)) $<
-	$(CC) $(CLIENT_CCFL) $< -o $@
+	$(CC) $(CCFL) $< -o $@
 
 build/sobj/%.o: src/%.c
 	@ mkdir -p $(@D)
@@ -48,6 +45,6 @@ build/sobj/%.o: src/%.c
 
 clean:
 	rm -rf build
-	rm -f $(CLIENT_TARGET)
+	rm -f $(TARGET)
 
 
