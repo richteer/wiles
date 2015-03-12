@@ -3,12 +3,11 @@
 #   This makefile only works right now with gmake :(
 #
 
-CFLAGS = -g
-SHELL	  = bash
+SHELL	      = bash
 CLIENT_TARGET = fermat
-CC	     = clang
-YACC	   = bison
-LEX	    = flex
+CC            = clang
+YACC          = bison
+LEX           = flex
 
 # Flags that are used regardless of compiliation options go here
 CLIENT_CCFL := -c -g -Wall
