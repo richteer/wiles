@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "parser.tab.h"
+#include "tree.h"
 
 int _verbose = 0;
 
@@ -17,16 +18,24 @@ int yywrap(void)
 	return 1;
 }
 
-int main(int argc, char ** argv)
-{
-	_verbose = (argc == 2) && !(strcmp(argv[1],"-v"));
-
-	yyparse();
-}
 %}
 
-%token RELOP ASNOP
-%token ADDOP MULOP
+%union {
+	int ival;
+	float rval;
+	char * sval;
+	int opval;
+
+	tree_t * tval;
+}
+
+%token <opval>RELOP
+%token ASNOP
+%token <opval> ADDOP 
+%token <opval> MULOP
+%token LT LE GT GE EQ NE
+%token OR PLUS MINUS
+%token SLASH STAR AND
 
 %token PROGRAM PROCEDURE FUNCTION
 %token BEGINN END
@@ -34,6 +43,14 @@ int main(int argc, char ** argv)
 %token IF THEN ELSE NOT
 %token DO WHILE
 %token VAR ID INTEGER REAL NUM
+%token <ival> INUM
+%token <rval> RNUM
+
+%type <tval> expression
+%type <tval> expression_list
+%type <tval> simple_expression
+%type <tval> term
+%type <tval> factor
 
 %%
 
@@ -57,7 +74,7 @@ declarations
 
 type
 	: standard_type
-	| ARRAY '[' NUM RANGE NUM ']' OF standard_type
+	| ARRAY '[' INUM RANGE INUM ']' OF standard_type
 	;
 
 standard_type
@@ -123,31 +140,49 @@ procedure_statement
 
 expression_list
 	: expression
+		{ $$ = $1; }
 	| expression_list ',' expression
+		{ $$ = make_tree(COMMA, $1, $3); }
 	;
 
 expression
 	: simple_expression
+		{ $$ = $1; }
 	| simple_expression RELOP simple_expression
+		{ $$  = make_op(RELOP, $2, $1, $3); }
 	;
 
 simple_expression
 	: term
+		{ $$ = $1; }
 	| sign term
 	| simple_expression ADDOP term
+		{ $$  = make_op(ADDOP, $2, $1, $3); }
 	;
 
 term
 	: factor
+		{ $$ = $1; }
 	| term MULOP factor
+		{ $$ = make_op(MULOP, $2, $1, $3); }
 	;
 
 factor
 	: ID
+		{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = strdup($1); } /* TODO: make this guy a pointer into symbol table */
+		/*{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = symtab_lookup($1); } */
+		/*{ $$ = make_id(symtab_lookup($1)); } */
 	| ID '(' expression_list ')'
-	| NUM
+		{ $$ = make_tree(FUNCTION_CALL, make_id(symtab_lookup($1)), $3); $$->attribute.sval = strdup($1); }
+	| ID '[' expression_list ']'
+	| INUM
+		{ $$ = make_inum($1); }
+	| RNUM
+		{ $$ = make_rnum($1); }
 	| '(' expression ')'
+		{ $$ = $2; }
 	| NOT factor
+		{ $$ = make_tree(NOT, NULL, NULL); } /* Type alone can infer the op */
 	;
 
 sign
@@ -158,3 +193,9 @@ sign
 
 %%
 
+int main(int argc, char ** argv)
+{
+	_verbose = (argc == 2) && !(strcmp(argv[1],"-v"));
+
+	yyparse();
+}

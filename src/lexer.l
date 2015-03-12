@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "parser.tab.h"
+#include "tree.h"
 
 // Inspired by exm's macros
 #define DISP(a) _verbose&&fprintf(stderr,"[%s]",#a);return a
@@ -20,6 +21,8 @@ digits      {digit}+
 frac        \.{digits}
 exp         E(\+|\-)?{digits}
 num         {digits}{frac}?{exp}?
+real        {digits}{frac}{exp}
+int         {digits}
 
 id	        {letter}({letter}|{digit})*
 
@@ -68,8 +71,9 @@ id	        {letter}({letter}|{digit})*
 
 ".."        { DISP(RANGE); }
 
-{num}       { DISPY(NUM); }
-{id}        { DISPY(ID); }
+{int}       { yylval.ival = atoi(yytext);   DISPY(INUM); }
+{real}      { yylval.rval = atof(yytext);   DISPY(RNUM); }
+{id}        { yylval.sval = strdup(yytext); DISPY(ID);    }
 
 {whitespace} { ; }
 \n           { fprintf(stderr, "%s", yytext); }
