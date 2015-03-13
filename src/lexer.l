@@ -26,6 +26,8 @@ int         {digits}
 
 id	        {letter}({letter}|{digit})*
 
+comment     \(\*.*\*\)
+
 %%
 
 
@@ -76,6 +78,7 @@ id	        {letter}({letter}|{digit})*
 {id}        { yylval.sval = strdup(yytext); DISPY(ID);    }
 
 {whitespace} { ; }
+{comment}    { ; }
 \n           { fprintf(stderr, "%s", yytext); }
 .            { fprintf(stderr, "<%c>", yytext[0]); return yytext[0]; }
 
