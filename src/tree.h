@@ -19,5 +19,5 @@ tree_t * make_inum(int val);
 tree_t * make_rnum(int val);
 tree_t * make_id(node_t * nd);
 tree_t * make_op(int type, int attr, tree_t * left, tree_t * right);
-
+void tree_print(tree_t *);
 #endif
