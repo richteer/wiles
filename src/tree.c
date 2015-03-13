@@ -28,17 +28,16 @@ tree_t * make_rnum(int val)
 	return p;
 }
 
-tree_t * make_id(char * name)
+tree_t * make_id(node_t * nd)
 {
 	tree_t * p = make_tree(ID, NULL, NULL);
-	p->attribute.sval = strdup(name);
+	p->attribute.sval = nd;
 	return p;
 }
 
-tree_t * make_tree(int type, int attribute, tree_t * left, tree_t * right)
+tree_t * make_op(int type, int attr, tree_t * left, tree_t * right)
 {
-	tree_t * p = make_tree(ID, left, right);
-	p->attribute.opval = attribute;
+	tree_t * p = make_tree(type, left, right);
+	p->attribute.opval = attr;
 	return p;
 }
-

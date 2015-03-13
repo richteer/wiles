@@ -5,6 +5,7 @@
 
 #define RETNULL(a) if(NULL==a)return NULL
 
+scope_t * top;
 
 // Magic hash function (page 436)
 static int hashpjw(char *s)
@@ -15,7 +16,7 @@ static int hashpjw(char *s)
 
 	for (p = s; *p != EOS; p++) {
 		h = (h << 4) + (*p);
-		if (g = h & 0xf0000000) {
+		if ((g = h & 0xf0000000)) {
 			h = h ^ (g >> 24);
 			h = h ^ g;
 		}
@@ -45,12 +46,12 @@ node_t * scope_insert(scope_t * scp, char * name)
 	int i;
 	node_t * hd;
 
-	RETNULL(hd);
+	RETNULL(scp);
 
 	i = hashpjw(name);
 	hd = scp->table[i];
 
-	scp->table[i] = node_insert(hd, name);
+	scp->table[i] = node_push(hd, name);
 	return scp->table[i];
 
 }

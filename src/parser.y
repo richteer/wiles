@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "parser.tab.h"
 #include "tree.h"
+#include "scope.h"
+#include "parser.tab.h"
+
+extern scope_t * top;
 
 int _verbose = 0;
 
@@ -29,7 +32,7 @@ int yywrap(void)
 	tree_t * tval;
 }
 
-%token <opval>RELOP
+%token <opval> RELOP
 %token ASNOP
 %token <opval> ADDOP 
 %token <opval> MULOP
@@ -42,7 +45,12 @@ int yywrap(void)
 %token ARRAY RANGE OF
 %token IF THEN ELSE NOT
 %token DO WHILE
-%token VAR ID INTEGER REAL NUM
+%token VAR INTEGER REAL NUM
+
+%token COMMA
+%token FUNCTION_CALL
+
+%token <sval> ID
 %token <ival> INUM
 %token <rval> RNUM
 
@@ -55,16 +63,20 @@ int yywrap(void)
 %%
 
 program
-	: PROGRAM ID '(' identifier_list ')' ';'
+	: { top = scope_push(top);  }
+        PROGRAM ID '(' identifier_list ')' ';'
 		declarations
 		subprogram_declarations
 		compound_statement
 		'.'
+      { top = scope_pop(top); }
 	;
 
 identifier_list
 	: ID
+      { scope_insert(top, $1); }
 	| identifier_list ',' ID
+      { scope_insert(top, $2); }
 	;
 
 declarations
@@ -155,7 +167,7 @@ expression
 simple_expression
 	: term
 		{ $$ = $1; }
-	| sign term
+	/*| sign term*/
 	| simple_expression ADDOP term
 		{ $$  = make_op(ADDOP, $2, $1, $3); }
 	;
@@ -169,11 +181,11 @@ term
 
 factor
 	: ID
-		{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = strdup($1); } /* TODO: make this guy a pointer into symbol table */
+		/*{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = node_create($1); } /* TODO: make this guy a pointer into symbol table */
 		/*{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = symtab_lookup($1); } */
-		/*{ $$ = make_id(symtab_lookup($1)); } */
+		{ $$ = make_id(scope_searchall(top, $1)); }
 	| ID '(' expression_list ')'
-		{ $$ = make_tree(FUNCTION_CALL, make_id(symtab_lookup($1)), $3); $$->attribute.sval = strdup($1); }
+		{ $$ = make_tree(FUNCTION_CALL, make_id(scope_searchall(top, $1)), $3); $$->attribute.sval = strdup($1); }
 	| ID '[' expression_list ']'
 	| INUM
 		{ $$ = make_inum($1); }
@@ -184,12 +196,12 @@ factor
 	| NOT factor
 		{ $$ = make_tree(NOT, NULL, NULL); } /* Type alone can infer the op */
 	;
-
+ /*
 sign
 	: '+'
 	| '-'
 	;
-
+ */
 
 %%
 

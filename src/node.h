@@ -8,8 +8,8 @@ typedef struct node_s {
 	struct node_s * next;
 } node_t;
 
-node_t * make_node(char * name);
-node_t * push_node(node_t * head, char * name);
-node_t * search_node(node_t * head, char * name);
+node_t * node_create(char * name);
+node_t * node_push(node_t * head, char * name);
+node_t * node_search(node_t * head, char * name);
 
 #endif

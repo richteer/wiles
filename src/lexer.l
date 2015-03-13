@@ -1,8 +1,8 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "parser.tab.h"
 #include "tree.h"
+#include "parser.tab.h"
 
 // Inspired by exm's macros
 #define DISP(a) _verbose&&fprintf(stderr,"[%s]",#a);return a
