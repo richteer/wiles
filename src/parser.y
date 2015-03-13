@@ -10,17 +10,6 @@ extern scope_t * top;
 
 int _verbose = 0;
 
-void yyerror(char *msg)
-{
-	fprintf(stderr, "Error: %s\n", msg);
-	exit(1);
-}
-
-int yywrap(void)
-{
-	return 1;
-}
-
 %}
 
 %union {
@@ -32,8 +21,8 @@ int yywrap(void)
 	tree_t * tval;
 }
 
-%token <opval> RELOP
 %token ASNOP
+%token <opval> RELOP
 %token <opval> ADDOP 
 %token <opval> MULOP
 %token LT LE GT GE EQ NE
@@ -49,6 +38,7 @@ int yywrap(void)
 
 %token COMMA
 %token FUNCTION_CALL
+%token ARRAY_ACCESS
 
 %token <sval> ID
 %token <ival> INUM
@@ -64,7 +54,7 @@ int yywrap(void)
 
 program
 	: { top = scope_push(top);  }
-        PROGRAM ID '(' identifier_list ')' ';'
+		PROGRAM ID '(' identifier_list ')' ';'
 		declarations
 		subprogram_declarations
 		compound_statement
@@ -76,7 +66,7 @@ identifier_list
 	: ID
       { scope_insert(top, $1); }
 	| identifier_list ',' ID
-      { scope_insert(top, $2); }
+      { scope_insert(top, $3); }
 	;
 
 declarations
@@ -101,11 +91,16 @@ subprogram_declarations
 
 subprogram_declaration
 	: subprogram_head declarations compound_statement
+		{ top = scope_pop(top); }
 	;
 
 subprogram_head
-	: FUNCTION ID arguments ':' standard_type ';'
-	| PROCEDURE ID arguments ';'
+	: FUNCTION ID
+			{ top = scope_push(top); }
+		arguments ':' standard_type ';'
+	| PROCEDURE ID
+			{ top = scope_push(top); }
+		arguments ';'
 	;
 
 arguments
@@ -134,6 +129,7 @@ statement_list
 
 statement
 	: variable ASNOP expression
+		{ tree_print($3); }
 	| procedure_statement
 	| compound_statement
 	| IF expression THEN statement ELSE statement
@@ -181,12 +177,11 @@ term
 
 factor
 	: ID
-		/*{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = node_create($1); } /* TODO: make this guy a pointer into symbol table */
-		/*{ $$ = make_tree(NUM, NULL, NULL); $$->attribute.sval = symtab_lookup($1); } */
 		{ $$ = make_id(scope_searchall(top, $1)); }
 	| ID '(' expression_list ')'
-		{ $$ = make_tree(FUNCTION_CALL, make_id(scope_searchall(top, $1)), $3); $$->attribute.sval = strdup($1); }
+		{ $$ = make_tree(FUNCTION_CALL, make_id(scope_searchall(top, $1)), $3); }
 	| ID '[' expression_list ']'
+		{ $$ = make_tree(ARRAY_ACCESS, make_id(scope_searchall(top, $1)), $3); }
 	| INUM
 		{ $$ = make_inum($1); }
 	| RNUM
@@ -210,4 +205,10 @@ int main(int argc, char ** argv)
 	_verbose = (argc == 2) && !(strcmp(argv[1],"-v"));
 
 	yyparse();
+}
+
+int yyerror(char * msg)
+{
+	fprintf(stderr, "Error: %s\n", msg);
+	exit(1);
 }
