@@ -23,13 +23,13 @@ SRCS := $(addprefix src/,$(SRCS))
 all: $(TARGET)
 
 $(TARGET): src/parser.tab.c src/lexer.c $(OBJS) 
-	$(CC) $^ $(LDFL) -o $(TARGET)
+	$(CC) $^ $(LDFL) -o $(TARGET) -lfl -ly
 
 src/parser.tab.c: src/parser.y
 	$(YACC) $< --defines=src/parser.tab.h --output=$@ -v
 
 src/lexer.c: src/lexer.l
-	$(LEX) $< -d -o $@
+	$(LEX) -d -o $@ $<
 
 build/obj/%.o: src/%.c
 	@ mkdir -p $(@D)
@@ -46,5 +46,6 @@ build/sobj/%.o: src/%.c
 clean:
 	rm -rf build
 	rm -f $(TARGET)
+	rm -f src/parser.tab.* src/lexer.c
 
 
