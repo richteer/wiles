@@ -21,9 +21,9 @@ int _verbose = 0;
 	tree_t * tval;
 }
 
-%token ASNOP
+%token <opval> ASNOP
 %token <opval> RELOP
-%token <opval> ADDOP 
+%token <opval> ADDOP
 %token <opval> MULOP
 %token LT LE GT GE EQ NE
 %token OR PLUS MINUS
@@ -96,7 +96,7 @@ subprogram_declaration
 
 subprogram_head
 	: FUNCTION ID
-			{ top = scope_push(top); }
+			{  scope_insert(top, $2); top = scope_push(top); }
 		arguments ':' standard_type ';'
 	| PROCEDURE ID
 			{ top = scope_push(top); }
