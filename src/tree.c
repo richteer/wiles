@@ -69,7 +69,7 @@ static void tprint(tree_t * t, int spaces)
 		case MULOP: fprintf(stderr, "[MULOP:%d]",   t->attribute.opval);       break;
 		case RELOP: fprintf(stderr, "[RELOP:%d]",   t->attribute.opval);       break;
 		default:    fprintf(stderr, "[UNKNOWN:%d]", t->type);                  break;
-		}
+	}
 
 	fprintf(stderr, "\n");
 	tprint(t->left, spaces+4);
