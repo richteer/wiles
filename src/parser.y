@@ -27,7 +27,7 @@ int _verbose = 0;
 %token <opval> MULOP
 %token LT LE GT GE EQ NE
 %token OR PLUS MINUS
-%token SLASH STAR AND
+%token SLASH STAR AND DIV MOD
 
 %token PROGRAM PROCEDURE FUNCTION
 %token BEGINN END

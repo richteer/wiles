@@ -32,24 +32,24 @@ comment     \(\*.*\*\)
 
 
  /* Relation Operators */
-"="     { DISPY(RELOP); }
-"<>"    { DISPY(RELOP); }
-"<"     { DISPY(RELOP); }
-"<="    { DISPY(RELOP); }
-">="    { DISPY(RELOP); }
-">"     { DISPY(RELOP); }
+"="     { yylval.opval = EQ; DISPY(RELOP); }
+"<>"    { yylval.opval = NE; DISPY(RELOP); }
+"<"     { yylval.opval = LT; DISPY(RELOP); }
+"<="    { yylval.opval = LE; DISPY(RELOP); }
+">="    { yylval.opval = GE; DISPY(RELOP); }
+">"     { yylval.opval = GT; DISPY(RELOP); }
 
  /* Additive Operators */
-"+"     { DISPY(ADDOP); }
-"-"     { DISPY(ADDOP); }
-"or"    { DISPY(ADDOP); }
+"+"     { yylval.opval = PLUS;  DISPY(ADDOP); }
+"-"     { yylval.opval = MINUS; DISPY(ADDOP); }
+"or"    { yylval.opval = OR;    DISPY(ADDOP); }
 
  /* Multiplicative Operators */
-"*"     { DISPY(MULOP); }
-"/"     { DISPY(MULOP); }
-"div"   { DISPY(MULOP); }
-"mod"   { DISPY(MULOP); }
-"and"   { DISPY(MULOP); }
+"*"     { yylval.opval = STAR;  DISPY(MULOP); }
+"/"     { yylval.opval = SLASH; DISPY(MULOP); }
+"div"   { yylval.opval = DIV;   DISPY(MULOP); }
+"mod"   { yylval.opval = MOD;   DISPY(MULOP); }
+"and"   { yylval.opval = AND;   DISPY(MULOP); }
 
  /* The rest */
 ":="    { DISP(ASNOP); }
@@ -83,5 +83,3 @@ comment     \(\*.*\*\)
 .            { fprintf(stderr, "<%c>", yytext[0]); return yytext[0]; }
 
 %%
-
-
