@@ -34,7 +34,6 @@ node_t * scope_search(scope_t * scp, char * name)
 	node_t * head;
 
 	RETNULL(scp);
-
 	i = hashpjw(name);
 
 	head = scp->table[i];
@@ -55,7 +54,7 @@ node_t * scope_insert(scope_t * scp, char * name)
 	i = hashpjw(name);
 	hd = scp->table[i];
 
-	scp->table[i] = node_push(hd, name);
+	scp->table[i] = node_push(hd, name, scp->offset += 8);
 	return scp->table[i];
 
 }

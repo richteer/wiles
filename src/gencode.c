@@ -131,8 +131,37 @@ int gen_postamble(char * name)
 	spew("\tpushq\t%%rbp\n");
 	spew("\tmovq\t%%rsp, %%rbp\n");
 	spew("\tcall\t%s\n", name);
+	gen_outro();
+
+	return 0;
+}
+
+int gen_intro(char * name)
+{
+	spew("%s:\n", name);
+	spew("\tpushq\t%%rbp\n");
+	spew("\tmovq\t%%rsp, %%rbp\n");
+
+	return 0;
+}
+
+int gen_outro(void)
+{
 	spew("\tleave\n");
 	spew("\tret\n");
+
+	return 0;
+}
+
+int gen_stalloc(int off)
+{
+	spew("\tsubq\t$%d, %%rsp\n", off+8);
+
+	return 0;
+}
+int gen_dealloc(int off)
+{
+	spew("\taddq\t$%d, %%rsp\n", off+8);
 
 	return 0;
 }
@@ -221,11 +250,23 @@ static int gen_go(tree_t * t)
 int gencode(tree_t * t)
 {
 	if (!t) return -1;
+	tree_print(t);
 
 	reg_init();
 
-	gen_rankify(t);
-	gen_go(t);
+	if (t->type == ASNOP) {
+		if (t->right->type == INUM) {
+			spew("\tmovq\t$%d, -%d(%%rbp)\n", t->right->attribute.ival, t->left->attribute.sval->offset);
+			goto end;
+		}
+		gen_rankify(t->right);
+		gen_go(t->right);
+		spew("\tmovq\t%s, -%d(%%rbp)\n", registers[st.top->num], t->left->attribute.sval->offset);
+	}
+	else {
+		assert(0);
+	}
+end:
 
 	reg_deinit();
 

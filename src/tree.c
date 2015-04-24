@@ -86,7 +86,7 @@ static void tprint(tree_t * t, int spaces)
 		case RNUM:  fprintf(stderr, "[RNUM:%f]",    t->attribute.rval);        break;
 		case ADDOP: fprintf(stderr, "[ADDOP:%d]",   t->attribute.opval);       break;
 		case MULOP: fprintf(stderr, "[MULOP:%d]",   t->attribute.opval);       break;
-		case RELOP: fprintf(stderr, "[RELOP:%d]",   t->attribute.opval);       break;
+		case ASNOP: fprintf(stderr, "[ASNOP]");                                break;
 		default:    fprintf(stderr, "[UNKNOWN:%d]", t->type);                  break;
 	}
 

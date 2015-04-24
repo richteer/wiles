@@ -66,14 +66,14 @@ program
 		PROGRAM ID '(' identifier_list ')' ';'
 		declarations
 		subprogram_declarations
-	{ spew("example:\n"); }
+	{ gen_intro($3); gen_stalloc(top->offset); }
 		compound_statement
 	{
-		spew("\tmovq\t%%r10, %%rsi\n");
+		/*spew("\tmovq\t%%r10, %%rsi\n");
 		spew("\tmovl\t$0, %%eax\n");
-		spew("\tmovq\t$.LC0, %%edi\n");
-		spew("\tcall\tprintf\n");
-		spew("\tleave\n\tret\n");
+		spew("\tmovl\t$.LC0, %%edi\n");
+		spew("\tcall\tprintf\n");*/
+		gen_outro();
 	}
 		'.'
       { gen_postamble($3); top = scope_pop(top); }
@@ -112,17 +112,19 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head declarations compound_statement
 		{
-			top = scope_pop(top);
+			gen_dealloc(top->offset); top = scope_pop(top); gen_outro();
 		}
 	;
 
 subprogram_head
 	: FUNCTION ID
-			{  scope_insert(top, $2); top = scope_push(top); }
+			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
 		arguments ':' standard_type ';'
+			{ gen_stalloc(top->offset); }
 	| PROCEDURE ID
-			{ top = scope_push(top); }
+			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
 		arguments ';'
+			{ gen_stalloc(top->offset); }
 	;
 
 arguments
@@ -151,7 +153,7 @@ statement_list
 
 statement
 	: variable ASNOP expression
-		{ tree_print($3); assert(!sem_check($3)); gencode($3); }
+		{ assert(!sem_check($3)); gencode(make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3)); }
 	| procedure_statement
 	| compound_statement
 	| IF expression THEN statement ELSE statement
@@ -160,7 +162,7 @@ statement
 
 variable
 	: ID
-		{ $$ = scope_search(top, $1); }
+		{ $$ = $1; }
 	//| ID '[' expression ']'
 	;
 

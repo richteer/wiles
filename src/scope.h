@@ -9,6 +9,7 @@
 typedef struct scope_s {
 	// Hash table: hashing with chaining
 	node_t * table[HASH_SIZE];
+	int offset;
 
 	struct scope_s * next;
 } scope_t;
