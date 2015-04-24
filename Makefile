@@ -10,7 +10,7 @@ LEX    = flex
 CCFL := -c -g -Wall
 LDFL := -Wall -lfl -ly
 
-SRCS := scope.c node.c tree.c parser.tab.c lexer.c semantic.c
+SRCS := scope.c node.c tree.c parser.tab.c lexer.c semantic.c gencode.c
 
 # Construct file lists
 OBJS := $(addprefix build/obj/,$(patsubst %.c,%.o,$(SRCS)))

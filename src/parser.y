@@ -54,6 +54,7 @@ int _verbose = 0;
 %type <tval> factor
 %type <ival> standard_type
 %type <ival> type
+%type <sval> variable;
 
 %%
 
@@ -139,7 +140,7 @@ statement_list
 
 statement
 	: variable ASNOP expression
-		{ tree_print($3); assert(!sem_check($3)); }
+		{ tree_print($3); assert(!sem_check($3)); gencode($3); }
 	| procedure_statement
 	| compound_statement
 	| IF expression THEN statement ELSE statement
@@ -148,12 +149,14 @@ statement
 
 variable
 	: ID
-	| ID '[' expression ']'
+		{ $$ = scope_search(top, $1); }
+	//m| ID '[' expression ']'
 	;
 
 procedure_statement
 	: ID
 	| ID '(' expression_list ')'
+		{ assert(!sem_check($3)); }
 	;
 
 expression_list

@@ -10,6 +10,7 @@ typedef struct tree_s {
 		float rval;
 		node_t * sval;
 	} attribute;
+	int rank;
 	struct tree_s * left;
 	struct tree_s * right;
 } tree_t;

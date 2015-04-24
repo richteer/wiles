@@ -51,6 +51,14 @@ tree_t * make_op(int type, int attr, tree_t * left, tree_t * right)
 	return p;
 }
 
+tree_t * make_asn(node_t * nd, tree_t * left, tree_t * right)
+{
+	DEBUG("\nMaking ASNOP\n");
+	tree_t * p = make_tree(ASNOP, left, right);
+	p->attribute.sval = nd;
+	return p;
+}
+
 int typeify(tree_t * t, int type)
 {
 	if (t->type == ID) {
