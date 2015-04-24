@@ -51,6 +51,17 @@ tree_t * make_op(int type, int attr, tree_t * left, tree_t * right)
 	return p;
 }
 
+int typeify(tree_t * t, int type)
+{
+	if (t->type == ID) {
+		t->attribute.sval->type = type;
+		return 0;
+	}
+	typeify(t->left, type);
+	typeify(t->right, type);
+	return 0;
+}
+
 static void tprint(tree_t * t, int spaces)
 {
 	int i;

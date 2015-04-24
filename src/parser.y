@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "tree.h"
 #include "scope.h"
+#include "semantic.h"
 #include "parser.tab.h"
 
 extern scope_t * top;
@@ -46,9 +48,12 @@ int _verbose = 0;
 
 %type <tval> expression
 %type <tval> expression_list
+%type <tval> identifier_list
 %type <tval> simple_expression
 %type <tval> term
 %type <tval> factor
+%type <ival> standard_type
+%type <ival> type
 
 %%
 
@@ -64,24 +69,27 @@ program
 
 identifier_list
 	: ID
-      { scope_insert(top, $1); }
+      { $$ = make_id(scope_insert(top, $1)); }
 	| identifier_list ',' ID
-      { scope_insert(top, $3); }
+      { $$ = make_tree(COMMA, $1, make_id(scope_insert(top, $3))); }
 	;
 
 declarations
 	: declarations VAR identifier_list ':' type ';'
+		{ typeify($3, $5); }
 	|
 	;
 
 type
 	: standard_type
-	| ARRAY '[' INUM RANGE INUM ']' OF standard_type
+		{ $$ = $1; }
+	//| ARRAY '[' INUM RANGE INUM ']' OF standard_type
 	;
 
 standard_type
 	: INTEGER
-	| REAL
+		{ $$ = INUM; }
+	//| REAL
 	;
 
 subprogram_declarations
@@ -91,7 +99,9 @@ subprogram_declarations
 
 subprogram_declaration
 	: subprogram_head declarations compound_statement
-		{ top = scope_pop(top); }
+		{
+			top = scope_pop(top);
+		}
 	;
 
 subprogram_head
@@ -129,7 +139,7 @@ statement_list
 
 statement
 	: variable ASNOP expression
-		{ tree_print($3); }
+		{ tree_print($3); assert(!sem_check($3)); }
 	| procedure_statement
 	| compound_statement
 	| IF expression THEN statement ELSE statement
