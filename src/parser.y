@@ -12,6 +12,8 @@ extern scope_t * top;
 
 int _verbose = 0;
 
+FILE * outsrc;
+
 %}
 
 %union {
@@ -70,9 +72,9 @@ program
 
 identifier_list
 	: ID
-      { $$ = make_id(scope_insert(top, $1)); }
+    	{ $$ = make_id(scope_insert(top, $1)); }
 	| identifier_list ',' ID
-      { $$ = make_tree(COMMA, $1, make_id(scope_insert(top, $3))); }
+    	{ $$ = make_tree(COMMA, $1, make_id(scope_insert(top, $3))); }
 	;
 
 declarations
@@ -150,7 +152,7 @@ statement
 variable
 	: ID
 		{ $$ = scope_search(top, $1); }
-	//m| ID '[' expression ']'
+	//| ID '[' expression ']'
 	;
 
 procedure_statement
@@ -217,7 +219,13 @@ int main(int argc, char ** argv)
 {
 	_verbose = (argc == 2) && !(strcmp(argv[1],"-v"));
 
+	outsrc = fopen("loloutput.s", "w");
+
+	gen_preamble();
 	yyparse();
+	gen_postamble();
+
+	fclose(outsrc);
 }
 
 int yyerror(char * msg)
