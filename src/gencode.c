@@ -118,18 +118,21 @@ static int gen_rankify(tree_t * t)
 
 int gen_preamble(void)
 {
-	fprintf(outsrc, "\t.globl main\n");
-	fprintf(outsrc, "main:\n");
-	fprintf(outsrc, "\tpushq\t%%rbp\n");
-	fprintf(outsrc, "\tmovq\t%%rsp, %%rbp\n");
+	spew(".LC0:\n");
+	spew("\t.string \"%%ld\\n\"\n");
+	spew("\t.globl main\n");
 
 	return 0;
 }
 
-int gen_postamble(void)
+int gen_postamble(char * name)
 {
-	fprintf(outsrc, "\tleave\n");
-	fprintf(outsrc, "\tret\n");
+	spew("main:\n");
+	spew("\tpushq\t%%rbp\n");
+	spew("\tmovq\t%%rsp, %%rbp\n");
+	spew("\tcall\t%s\n", name);
+	spew("\tleave\n");
+	spew("\tret\n");
 
 	return 0;
 }
@@ -137,12 +140,12 @@ int gen_postamble(void)
 static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
-		fprintf(outsrc, "\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
 		return 0;
 	}
 	assert(r);
 
-	fprintf(outsrc, "\taddq\t%s, %s\n", registers[l->num], registers[r->num]);
+	spew("\taddq\t%s, %s\n", registers[l->num], registers[r->num]);
 
 	return 0;
 }
@@ -150,12 +153,12 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 static int gen_mulop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
-		fprintf(outsrc, "\timulq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		spew("\timulq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
 		return 0;
 	}
 	assert(r);
 
-	fprintf(outsrc, "\timulq\t%s, %s\n", registers[l->num], registers[r->num]);
+	spew("\timulq\t%s, %s\n", registers[l->num], registers[r->num]);
 
 	return 0;
 }
@@ -184,7 +187,7 @@ static int gen_go(tree_t * t)
 		case 0:
 			// MOV to top
 			printf("MOV %d, %s\n", t->attribute.ival, registers[st.top->num]);
-			fprintf(outsrc, "\tmovq\t$%d, %s\n", t->attribute.ival, registers[st.top->num]);
+			spew("\tmovq\t$%d, %s\n", t->attribute.ival, registers[st.top->num]);
 			break;
 		case 1:
 			gen_go(t->left);

@@ -7,6 +7,7 @@
 #include "scope.h"
 #include "semantic.h"
 #include "parser.tab.h"
+#include "gencode.h"
 
 extern scope_t * top;
 
@@ -61,13 +62,21 @@ FILE * outsrc;
 %%
 
 program
-	: { top = scope_push(top);  }
+	: { gen_preamble(); top = scope_push(top); }
 		PROGRAM ID '(' identifier_list ')' ';'
 		declarations
 		subprogram_declarations
+	{ spew("example:\n"); }
 		compound_statement
+	{
+		spew("\tmovq\t%%r10, %%rsi\n");
+		spew("\tmovl\t$0, %%eax\n");
+		spew("\tmovq\t$.LC0, %%edi\n");
+		spew("\tcall\tprintf\n");
+		spew("\tleave\n\tret\n");
+	}
 		'.'
-      { top = scope_pop(top); }
+      { gen_postamble($3); top = scope_pop(top); }
 	;
 
 identifier_list
@@ -221,9 +230,7 @@ int main(int argc, char ** argv)
 
 	outsrc = fopen("loloutput.s", "w");
 
-	gen_preamble();
 	yyparse();
-	gen_postamble();
 
 	fclose(outsrc);
 }
