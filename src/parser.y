@@ -12,6 +12,7 @@
 extern scope_t * top;
 
 int _verbose = 0;
+int offstat = 0;
 
 FILE * outsrc;
 
@@ -43,6 +44,7 @@ FILE * outsrc;
 
 %token COMMA
 %token FUNCTION_CALL
+%token PROCEDURE_CALL
 %token ARRAY_ACCESS
 
 %token <sval> ID
@@ -52,6 +54,7 @@ FILE * outsrc;
 %type <tval> expression
 %type <tval> expression_list
 %type <tval> identifier_list
+%type <tval> declarations
 %type <tval> simple_expression
 %type <tval> term
 %type <tval> factor
@@ -64,15 +67,14 @@ FILE * outsrc;
 program
 	: { gen_preamble(); top = scope_push(top); }
 		PROGRAM ID '(' identifier_list ')' ';'
+	{ offstat = -1; }
 		declarations
+	{ offstat = 0; }
 		subprogram_declarations
-	{ gen_intro($3); gen_stalloc(top->offset); }
+	{ gen_intro($3); gen_stalloc(top->off_loc); }
 		compound_statement
 	{
-		/*spew("\tmovq\t%%r10, %%rsi\n");
-		spew("\tmovl\t$0, %%eax\n");
-		spew("\tmovl\t$.LC0, %%edi\n");
-		spew("\tcall\tprintf\n");*/
+		gen_dealloc(top->off_loc);
 		gen_outro();
 	}
 		'.'
@@ -81,15 +83,16 @@ program
 
 identifier_list
 	: ID
-    	{ $$ = make_id(scope_insert(top, $1)); }
+    	{ fprintf(stderr, "derpings %s\n", $1); $$ = make_id(scope_insert(top, $1)); }
 	| identifier_list ',' ID
     	{ $$ = make_tree(COMMA, $1, make_id(scope_insert(top, $3))); }
 	;
 
 declarations
 	: declarations VAR identifier_list ':' type ';'
-		{ typeify($3, $5); }
+		{ typeify($3, $5); $$ = $3; }
 	|
+		{ $$ = NULL; }
 	;
 
 type
@@ -110,9 +113,13 @@ subprogram_declarations
 	;
 
 subprogram_declaration
-	: subprogram_head declarations compound_statement
+	: subprogram_head
+		{ offstat = -1; }
+	declarations
+		{ offstat = 0; }
+	compound_statement
 		{
-			gen_dealloc(top->offset); top = scope_pop(top); gen_outro();
+			gen_dealloc(top->off_loc); top = scope_pop(top); gen_outro();
 		}
 	;
 
@@ -120,15 +127,17 @@ subprogram_head
 	: FUNCTION ID
 			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
 		arguments ':' standard_type ';'
-			{ gen_stalloc(top->offset); }
+			{ gen_stalloc(top->off_loc); }
 	| PROCEDURE ID
 			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
 		arguments ';'
-			{ gen_stalloc(top->offset); }
+			{ gen_stalloc(top->off_loc); }
 	;
 
 arguments
-	: '(' parameter_list ')'
+	: { offstat = 1; }
+	'(' parameter_list ')'
+	  { offstat = 0; }
 	|
 	;
 
@@ -170,15 +179,16 @@ procedure_statement
 	: ID
 	| ID '(' expression_list ')'
 		{
+			fprintf(stderr, "--->>> %s\n", $1);
 			if (gen_write($1, $3));
 			else if (gen_read($1, $3));
-			else;
+			else gencode(make_tree(PROCEDURE_CALL, make_id(scope_searchall(top, $1)), $3));
 		}
 	;
 
 expression_list
 	: expression
-		{ $$ = $1; }
+		{ $$ = make_tree(COMMA, NULL, $1); }
 	| expression_list ',' expression
 		{ $$ = make_tree(COMMA, $1, $3); }
 	;

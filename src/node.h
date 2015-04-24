@@ -5,6 +5,7 @@ typedef struct node_s {
 	char * name;
 	int type;
 	int offset;
+	int depth;
 	struct node_s * next;
 } node_t;
 

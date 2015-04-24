@@ -14,6 +14,7 @@
 #define GENSWITCH(t) switch((CASE0(t)) ? 0 : (CASE1(t)) ? 1 : (CASE2(t)) ? 2 : (CASE3(t)) ? 3 : 4)
 
 extern FILE * outsrc;
+extern scope_t * top;
 
 char registers[][5] = {
 	"%r10",
@@ -165,36 +166,68 @@ int gen_outro(void)
 
 int gen_stalloc(int off)
 {
-	spew("\tsubq\t$%d, %%rsp\n", off+8);
+	if (!off) return 0;
+
+	spew("\tsubq\t$%d, %%rsp\n", -off);
 
 	return 0;
 }
 int gen_dealloc(int off)
 {
-	spew("\taddq\t$%d, %%rsp\n", off+8);
+	if (!off) return 0;
+
+	spew("\taddq\t$%d, %%rsp\n", -off);
 
 	return 0;
 }
 
+static void spew_id(char * fmt, tree_t * t)
+{
+	int i;
+	char foo[16] = {0};
+
+	scope_searchall(top, t->attribute.sval->name);
+	if (t->attribute.sval->depth != 0) {
+		spew("\tmovq\t(%%rbp), %%rcx\n");
+		for (i = t->attribute.sval->depth - 1; i != 0; i--) {
+			spew("\tmovq\t(%%rcx), %%rcx\n");
+		}
+		sprintf(foo,"%d(%%rcx)", t->attribute.sval->offset);
+		spew(fmt, foo);
+	}
+	else {
+		sprintf(foo,"%d(%%rcx)", t->attribute.sval->offset);
+		spew(fmt, foo);
+	}
+}
+
 int gen_write(char * name, tree_t * t)
 {
-	if (strcmp("write", name)) {
+	if (!t || strcmp("write", name)) {
 		return 0;
 	}
-	assert(t);
 
 	if (t->type != COMMA) {
 		spew("\tmovq\t$0, %%rax\n");
 		if (t->type == INUM)
 			spew("\tmovq\t$%d, %%rsi\n", t->attribute.ival);
-		else
-			spew("\tmovq\t-%d(%%rbp), %%rsi\n", t->attribute.sval->offset);
+		else {
+			spew("\tmovq\t%d(%%rbp), %%rsi\n", t->attribute.sval->offset);
+		}
 		spew("\tmovq\t$.LC0, %%rdi\n");
 		spew("\tcall\tprintf\n");
 		return 1;
 	}
 
-	// TODO: Support comma
+	spew("\tmovq\t$0, %%rax\n");
+	if (t->type == INUM)
+		spew("\tmovq\t$%d, %%rsi\n", t->right->attribute.ival);
+	else {
+		spew_id("\tmovq\t%s, %%rsi\n", t->right);
+	}
+	spew("\tmovq\t$.LC0, %%rdi\n");
+	spew("\tcall\tprintf\n");
+	gen_write("write", t->left);
 
 	return 1;
 }
@@ -213,7 +246,10 @@ int gen_read(char * name, tree_t * t)
 static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
-		spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		if (t->attribute.opval == PLUS)
+			spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		else if (t->attribute.opval == MINUS)
+			spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
 		return 0;
 	}
 	assert(r);
@@ -252,10 +288,10 @@ static int gen_go(tree_t * t)
 {
 	reg_t * r;
 
-	//int moo = GENSWITCH(t);
+	if (t->type == ID) {
+		return 0;
+	}
 
-	//printf("Case %d\n", moo);
-	//switch(moo) {
 	GENSWITCH(t) {
 		case 0:
 			// MOV to top
@@ -300,24 +336,42 @@ int gencode(tree_t * t)
 	if (!t) return -1;
 	tree_print(t);
 
-	reg_init();
 	printf("gencoding\n");
 
 	if (t->type == ASNOP) {
 		if (t->right->type == INUM) {
-			spew("\tmovq\t$%d, -%d(%%rbp)\n", t->right->attribute.ival, t->left->attribute.sval->offset);
+			spew("\tmovq\t$%d, %d(%%rbp)\n", t->right->attribute.ival, t->left->attribute.sval->offset);
+			goto end;
+		}
+		else if (t->right->type == ID) {
+			spew("\tmovq\t%d(%%rbp), %%r10\n", t->right->attribute.sval->offset);
+			spew("\tmovq\t%s, %d(%%rbp)\n", registers[0], t->left->attribute.sval->offset);
 			goto end;
 		}
 		gen_rankify(t->right);
+		reg_init();
 		gen_go(t->right);
-		spew("\tmovq\t%s, -%d(%%rbp)\n", registers[st.top->num], t->left->attribute.sval->offset);
+		spew("\tmovq\t%s, %d(%%rbp)\n", registers[st.top->num], t->left->attribute.sval->offset);
+		reg_deinit();
+	}
+	else if (t->type == PROCEDURE_CALL) {
+		gencode(t->right);
+		spew("\tcall\t%s\n", t->left->attribute.sval->name);
+
+	}
+	else if (t->type == COMMA) {
+		reg_init();
+		gen_go(t->right);
+		spew("\tpushq\t%s\n", registers[st.top->num]);
+		reg_deinit();
+		gencode(t->left);
 	}
 	else {
 		assert(0);
 	}
+
 end:
 
-	reg_deinit();
 
 	return 0;
 }

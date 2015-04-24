@@ -7,6 +7,10 @@
 
 scope_t * top;
 extern int _verbose;
+extern int offstat;
+
+int depth = 0;
+
 #define DEBUG(...) _verbose&&fprintf(stderr, __VA_ARGS__)
 
 // Magic hash function (page 436)
@@ -46,6 +50,7 @@ node_t * scope_insert(scope_t * scp, char * name)
 {
 	int i;
 	node_t * hd;
+	int offset;
 
 	RETNULL(scp);
 
@@ -54,7 +59,13 @@ node_t * scope_insert(scope_t * scp, char * name)
 	i = hashpjw(name);
 	hd = scp->table[i];
 
-	scp->table[i] = node_push(hd, name, scp->offset += 8);
+	switch(offstat) {
+		case -1: offset = scp->off_loc -= 8; break;
+		case 0 : offset = 0;                 break;
+		case 1 : offset = scp->off_arg += 8; break;
+	}
+
+	scp->table[i] = node_push(hd, name, offset);
 	return scp->table[i];
 
 }
@@ -68,11 +79,16 @@ node_t * scope_searchall(scope_t * scp, char * name)
 
 	while (scp != NULL) {
 		ret = scope_search(scp, name);
-		if (ret != NULL) return ret;
-
+		if (ret != NULL) {
+			ret->depth = depth;
+			depth = 0;
+			return ret;
+		}
+		depth++;
 		scp = scp->next;
 	}
 
+	depth = 0;
 	fprintf(stderr, "Warning, could not find id '%s'\n", name);
 	return NULL;
 }
@@ -81,7 +97,7 @@ node_t * scope_searchall(scope_t * scp, char * name)
 scope_t * make_scope(void)
 {
 	scope_t * p = calloc(1,sizeof(scope_t));
-
+	p->off_arg = 8;
 	return p;
 }
 

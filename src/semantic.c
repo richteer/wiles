@@ -65,6 +65,7 @@ int sem_check(tree_t * t)
 		case ASNOP: return sem_asnop(t);
 		case FUNCTION_CALL: return 0;
 		case INUM:  return 0;
+		case ID: return 0;
 		default: fprintf(stderr, "Unknown operation, bailing... [%d]\n",t->type); return -1;
 	}
 
