@@ -1,11 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include "scope.h"
 #include "gencode.h"
 #include "parser.tab.h"
 
-#define GENSWITCH(t) switch((!t->left && !t->right && (t->rank == 1)) ? 0 : ((t->right && (t->right->rank == 0)) ? 1 : (t->left && t->right && t->left->rank >= t->right->rank) ? 2 : ((t->left && t->right && t->left->rank < t->right->rank) ? 3 : 4)))
+#define CASE0(t) (!t->left && !t->right && (t->rank == 1))
+#define CASE1(t) (t->right && (t->right->rank == 0))
+#define CASE2(t) (t->left && t->right && (t->left->rank < t->right->rank) && (t->left->rank >= 1))
+#define CASE3(t) (t->left && t->right && (t->left->rank >= t->right->rank) && (t->right->rank >= 1))
+
+#define GENSWITCH(t) switch((CASE0(t)) ? 0 : (CASE1(t)) ? 1 : (CASE2(t)) ? 2 : (CASE3(t)) ? 3 : 4)
 
 extern FILE * outsrc;
 
@@ -97,9 +103,11 @@ static int gen_rankify(tree_t * t)
 
 	if (t->left && !t->left->left && !t->left->right) {
 		t->left->rank = 1;
+		printf("%d = %d\n", t->left->type, t->left->rank);
 	}
 	if (t->right && !t->right->left && !t->right->right) {
 		t->right->rank = 0;
+		printf("%d = %d\n", t->right->type, t->right->rank);
 	}
 
 	gen_rankify(t->left);
@@ -107,10 +115,12 @@ static int gen_rankify(tree_t * t)
 
 	if (t->left->rank == t->right->rank) {
 		t->rank = t->left->rank + 1;
+		printf("%d = %d\n", t->type, t->rank);
 	}
 	else {
 		t->rank = (t->left->rank < t->right->rank) ?
 			t->right->rank : t->left->rank;
+		printf("%d = %d\n", t->type, t->rank);
 	}
 
 	return 0;
@@ -166,6 +176,40 @@ int gen_dealloc(int off)
 	return 0;
 }
 
+int gen_write(char * name, tree_t * t)
+{
+	if (strcmp("write", name)) {
+		return 0;
+	}
+	assert(t);
+
+	if (t->type != COMMA) {
+		spew("\tmovq\t$0, %%rax\n");
+		if (t->type == INUM)
+			spew("\tmovq\t$%d, %%rsi\n", t->attribute.ival);
+		else
+			spew("\tmovq\t-%d(%%rbp), %%rsi\n", t->attribute.sval->offset);
+		spew("\tmovq\t$.LC0, %%rdi\n");
+		spew("\tcall\tprintf\n");
+		return 1;
+	}
+
+	// TODO: Support comma
+
+	return 1;
+}
+
+int gen_read(char * name, tree_t * t)
+{
+	if (strcmp("read", name)) {
+		return 0;
+	}
+
+	// TODO
+
+	return 1;
+}
+
 static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
@@ -215,15 +259,18 @@ static int gen_go(tree_t * t)
 	GENSWITCH(t) {
 		case 0:
 			// MOV to top
+			printf("case 0\n");
 			printf("MOV %d, %s\n", t->attribute.ival, registers[st.top->num]);
 			spew("\tmovq\t$%d, %s\n", t->attribute.ival, registers[st.top->num]);
 			break;
 		case 1:
+			printf("case 1\n");
 			gen_go(t->left);
 			gen_op(t, NULL, st.top);
 			printf("OP %d, %s\n", t->right->attribute.ival, registers[st.top->num]);
 			break;
 		case 2:
+			printf("case 2\n");
 			reg_swap();
 			gen_go(t->right);
 			r = reg_pop();
@@ -233,6 +280,7 @@ static int gen_go(tree_t * t)
 			reg_push(r);
 			reg_swap();
 		case 3:
+			printf("case 3\n");
 			gen_go(t->left);
 			r = reg_pop();
 			gen_go(t->right);
@@ -253,6 +301,7 @@ int gencode(tree_t * t)
 	tree_print(t);
 
 	reg_init();
+	printf("gencoding\n");
 
 	if (t->type == ASNOP) {
 		if (t->right->type == INUM) {

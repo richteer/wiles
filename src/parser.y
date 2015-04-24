@@ -169,7 +169,11 @@ variable
 procedure_statement
 	: ID
 	| ID '(' expression_list ')'
-		{ assert(!sem_check($3)); }
+		{
+			if (gen_write($1, $3));
+			else if (gen_read($1, $3));
+			else;
+		}
 	;
 
 expression_list
