@@ -5,6 +5,7 @@
 #include "parser.tab.h"
 
 // Inspired by exm's macros
+#define SHOW(...) _verbose&&fprintf(stderr,__VA_ARGS__)
 #define DISP(a) _verbose&&fprintf(stderr,"[%s]",#a);return a
 #define DISPY(a) _verbose&&fprintf(stderr,"[%s{%s}]",#a,yytext);return a
 
@@ -79,7 +80,7 @@ comment     \(\*.*\*\)
 
 {whitespace} { ; }
 {comment}    { ; }
-\n           { fprintf(stderr, "%s", yytext); }
-.            { fprintf(stderr, "<%c>", yytext[0]); return yytext[0]; }
+\n           { SHOW("%s", yytext); }
+.            { SHOW("<%c>", yytext[0]); return yytext[0]; }
 
 %%

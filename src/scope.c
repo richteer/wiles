@@ -6,6 +6,8 @@
 #define RETNULL(a) if(NULL==a)return NULL
 
 scope_t * top;
+extern int _verbose;
+#define DEBUG(...) _verbose&&fprintf(stderr, __VA_ARGS__)
 
 // Magic hash function (page 436)
 static int hashpjw(char *s)
@@ -21,7 +23,7 @@ static int hashpjw(char *s)
 			h = h ^ g;
 		}
 	}
-	
+
 	return h % HASH_SIZE;
 }
 
@@ -34,9 +36,9 @@ node_t * scope_search(scope_t * scp, char * name)
 	RETNULL(scp);
 
 	i = hashpjw(name);
-	
+
 	head = scp->table[i];
-	
+
 	return node_search(head, name);
 }
 
@@ -47,6 +49,8 @@ node_t * scope_insert(scope_t * scp, char * name)
 	node_t * hd;
 
 	RETNULL(scp);
+
+	DEBUG("Inserting %s\n",name);
 
 	i = hashpjw(name);
 	hd = scp->table[i];
@@ -66,10 +70,11 @@ node_t * scope_searchall(scope_t * scp, char * name)
 	while (scp != NULL) {
 		ret = scope_search(scp, name);
 		if (ret != NULL) return ret;
-		
+
 		scp = scp->next;
 	}
 
+	fprintf(stderr, "Warning, could not find id '%s'\n", name);
 	return NULL;
 }
 
@@ -77,7 +82,7 @@ node_t * scope_searchall(scope_t * scp, char * name)
 scope_t * make_scope(void)
 {
 	scope_t * p = calloc(1,sizeof(scope_t));
-	
+
 	return p;
 }
 
@@ -96,8 +101,8 @@ scope_t * scope_pop(scope_t * top)
 	scope_t * tmp;
 
 	RETNULL(top);
-	
+
 	tmp = top;
 
-	return top->next;	
+	return top->next;
 }
