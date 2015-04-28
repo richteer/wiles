@@ -11,3 +11,5 @@ int gen_stalloc(int off);
 int gen_dealloc(int off);
 int gen_write(char * name, tree_t * t);
 int gen_read(char * name, tree_t * t);
+int gen_label(void);
+int spew_jmp(char * jmp, int offset);

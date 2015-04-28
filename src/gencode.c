@@ -35,6 +35,7 @@ typedef struct {
 } stack_t;
 
 stack_t st;
+int loopnum = 0;
 
 static void reg_init(void)
 {
@@ -94,6 +95,7 @@ static void reg_swap(void)
 
 	return;
 }
+
 
 static int gen_rankify(tree_t * t)
 {
@@ -181,7 +183,41 @@ int gen_dealloc(int off)
 	return 0;
 }
 
-static void spew_id(char * fmt, tree_t * t)
+int spew_jmp(char * jmp, int offset)
+{
+	char foo[10] = {0};
+
+	sprintf(foo, ".LL%d", loopnum+offset);
+	spew("\t%s\t%s\n",jmp,foo);
+
+	return 0;
+}
+
+int gen_label(void)
+{
+	spew(".LL%d:\n",loopnum++);
+	return 0;
+}
+
+int gen_jmp(tree_t * t)
+{
+
+	switch(t->attribute.opval) {
+		case EQ: spew_jmp("je", 0);  break;
+		case NE: spew_jmp("jne",0); break;
+		case LT: spew_jmp("jl", 0);  break;
+		case LE: spew_jmp("jle",0); break;
+		case GT: spew_jmp("jg", 0); break;
+		case GE: spew_jmp("jge",0);  break;
+		default: fprintf(stderr, "Wat\n"); break;
+	}
+
+	spew_jmp("jmp",1);
+
+	return 0;
+}
+
+static void spew_id(char * fmt, tree_t * t, char * opt)
 {
 	int i;
 	char foo[16] = {0};
@@ -193,11 +229,11 @@ static void spew_id(char * fmt, tree_t * t)
 			spew("\tmovq\t(%%rcx), %%rcx\n");
 		}
 		sprintf(foo,"%d(%%rcx)", t->attribute.sval->offset);
-		spew(fmt, foo);
+		spew(fmt, foo, opt);
 	}
 	else {
-		sprintf(foo,"%d(%%rcx)", t->attribute.sval->offset);
-		spew(fmt, foo);
+		sprintf(foo,"%d(%%rbp)", t->attribute.sval->offset);
+		spew(fmt, foo, opt);
 	}
 }
 
@@ -206,7 +242,7 @@ int gen_write(char * name, tree_t * t)
 	if (!t || strcmp("write", name)) {
 		return 0;
 	}
-
+	tree_print(t);
 	if (t->type != COMMA) {
 		spew("\tmovq\t$0, %%rax\n");
 		if (t->type == INUM)
@@ -220,10 +256,10 @@ int gen_write(char * name, tree_t * t)
 	}
 
 	spew("\tmovq\t$0, %%rax\n");
-	if (t->type == INUM)
+	if (t->right->type == INUM)
 		spew("\tmovq\t$%d, %%rsi\n", t->right->attribute.ival);
 	else {
-		spew_id("\tmovq\t%s, %%rsi\n", t->right);
+		spew_id("\tmovq\t%s, %%rsi\n", t->right, NULL);
 	}
 	spew("\tmovq\t$.LC0, %%rdi\n");
 	spew("\tcall\tprintf\n");
@@ -246,10 +282,18 @@ int gen_read(char * name, tree_t * t)
 static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
-		if (t->attribute.opval == PLUS)
-			spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
-		else if (t->attribute.opval == MINUS)
-			spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		if (t->attribute.opval == PLUS) {
+			if (t->right->type == INUM)
+				spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+			else
+				spew_id("\taddq\t$%d, %s\n", t->right, registers[r->num]);
+		}
+		else if (t->attribute.opval == MINUS) {
+			if (t->right->type == INUM)
+				spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+			else
+				spew_id("\tsubq\t$%d, %s\n", t->right, registers[r->num]);
+		}
 		return 0;
 	}
 	assert(r);
@@ -291,6 +335,10 @@ static int gen_go(tree_t * t)
 	if (t->type == ID) {
 		return 0;
 	}
+	else if (t->type == INUM) {
+		spew("\tmovq\t$%d,%s\n",t->attribute.ival,registers[st.top->num]);
+		return 0;
+	}
 
 	GENSWITCH(t) {
 		case 0:
@@ -325,7 +373,7 @@ static int gen_go(tree_t * t)
 			reg_push(r);
 			break;
 
-		default: fprintf(stderr, "Wtf?\n"); assert(0); break;
+		default: fprintf(stderr, "Wtf? Case 4'd\n"); assert(0); break;
 	}
 
 	return 0;
@@ -361,10 +409,27 @@ int gencode(tree_t * t)
 	}
 	else if (t->type == COMMA) {
 		reg_init();
+		gen_rankify(t->right);
 		gen_go(t->right);
 		spew("\tpushq\t%s\n", registers[st.top->num]);
 		reg_deinit();
 		gencode(t->left);
+	}
+	else if (t->type == RELOP) {
+		fprintf(stderr, "YEEEEP\n");
+		reg_init();
+		gen_rankify(t->left);
+		gen_go(t->left);
+		spew("\tpushq\t%s\n",registers[st.top->num]);
+		reg_deinit();
+		reg_init();
+		gen_rankify(t->right);
+		gen_go(t->right);
+		spew("\tmovq\t%s,%s\n","(%rsp)", "%rdx");
+		spew("\tcmpq\t%s,%s\n",registers[st.top->num], "%rdx");
+		reg_deinit();
+		gen_jmp(t);
+		gen_label();
 	}
 	else {
 		assert(0);

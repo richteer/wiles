@@ -165,7 +165,15 @@ statement
 		{ assert(!sem_check($3)); gencode(make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3)); }
 	| procedure_statement
 	| compound_statement
-	| IF expression THEN statement ELSE statement
+	| IF expression
+		{ gencode($2); }
+	THEN
+	statement
+	ELSE
+	{ spew_jmp("jmp",1); gen_label(); }
+	statement
+	{ gen_label(); }
+
 	| WHILE expression DO statement
 	;
 
