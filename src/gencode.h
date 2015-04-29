@@ -13,3 +13,4 @@ int gen_write(char * name, tree_t * t);
 int gen_read(char * name, tree_t * t);
 int gen_label(void);
 int spew_jmp(char * jmp, int offset);
+int gen_jmp(tree_t * t, int offset);

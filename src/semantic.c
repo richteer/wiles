@@ -18,7 +18,7 @@ static int get_type(tree_t * t)
 		if (l != r) return 0;
 		return l;
 	}
-
+	
 	return 0;
 }
 

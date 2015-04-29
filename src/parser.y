@@ -166,8 +166,21 @@ statement
 	| procedure_statement
 	| compound_statement
 	| IF expression
-		{ gencode($2); }
+		{
+			if ($2->type == RELOP) {
+				gencode($2);
+				gen_jmp($2, 0);
+				spew_jmp("jmp", 1);
+			}
+			else {
+				gencode($2);
+				spew("\tcmpl\t$0, %%r10\n");
+				spew_jmp("jne", 0);
+				spew_jmp("jmp", 1);
+			}
+		}
 	THEN
+	{ gen_label(); }
 	statement
 	ELSE
 	{ spew_jmp("jmp",1); gen_label(); }
@@ -180,7 +193,7 @@ statement
 	{ gen_label(); }
 	 statement
 	{ gen_label(); }
-	{ gencode($3); }
+	{ gencode($3); gen_jmp($3, -2); }
 	;
 
 variable

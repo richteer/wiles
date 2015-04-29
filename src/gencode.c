@@ -201,20 +201,18 @@ int gen_label(void)
 	return 0;
 }
 
-int gen_jmp(tree_t * t)
+int gen_jmp(tree_t * t, int offset)
 {
 
 	switch(t->attribute.opval) {
-		case EQ: spew_jmp("je ",0); break;
-		case NE: spew_jmp("jne",0); break;
-		case LT: spew_jmp("jl ",0); break;
-		case LE: spew_jmp("jle",0); break;
-		case GT: spew_jmp("jg ",0); break;
-		case GE: spew_jmp("jge",0); break;
+		case EQ: spew_jmp("je ", offset); break;
+		case NE: spew_jmp("jne", offset); break;
+		case LT: spew_jmp("jl ", offset); break;
+		case LE: spew_jmp("jle", offset); break;
+		case GT: spew_jmp("jg ", offset); break;
+		case GE: spew_jmp("jge", offset); break;
 		default: fprintf(stderr, "Wat\n"); break;
 	}
-
-	spew_jmp("jmp",1);
 
 	return 0;
 }
@@ -398,6 +396,24 @@ static int gen_go(tree_t * t)
 	return 0;
 }
 
+static void gen_relop(tree_t * t, char * reg)
+{
+	if (t->type == ID) {
+		spew_id("\tmovq\t%s, %s\n", t, reg);
+	}
+	else if (t->type == INUM) {
+		spew("\tmovq\t$%d, %s\n", t->attribute.ival, reg);
+	}
+	else {
+		reg_init();
+		gen_rankify(t);
+		gen_go(t);
+		if (strcmp(reg, "%r10"))
+			spew("\tmovq\t%%r10, %s\n", reg);
+		reg_deinit();
+	}
+}
+
 int gencode(tree_t * t)
 {
 	if (!t) return -1;
@@ -430,14 +446,17 @@ int gencode(tree_t * t)
 
 	}
 	else if (t->type == COMMA) {
+		gen_relop(t->right, "%r10");
+		/*
 		reg_init();
 		gen_rankify(t->right);
 		gen_go(t->right);
 		spew("\tpushq\t%s\n", registers[st.top->num]);
 		reg_deinit();
+		*/
 		gencode(t->left);
 	}
-	else if (t->type == RELOP) {
+	else if (t->type == RELOP) {/*
 		fprintf(stderr, "YEEEEP\n");
 		reg_init();
 		gen_rankify(t->left);
@@ -450,9 +469,13 @@ int gencode(tree_t * t)
 		spew("\tmovq\t%s,%s\n","(%rsp)", "%rdx");
 		spew("\tpopq\t%s\n",registers[st.top->num]);
 		spew("\tcmpq\t%s,%s\n",registers[st.top->num], "%rdx");
-		reg_deinit();
-		gen_jmp(t);
-		gen_label();
+		reg_deinit();*/
+
+		gen_relop(t->left, "%rdx");
+		gen_relop(t->right, "%rbx");
+
+		spew("\tcmpq\t%%rbx, %%rdx\n");
+
 	}
 	else {
 		assert(0);
