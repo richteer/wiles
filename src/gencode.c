@@ -443,11 +443,12 @@ int gencode(tree_t * t)
 	else if (t->type == PROCEDURE_CALL) {
 		gencode(t->right);
 		spew("\tcall\t%s\n", t->left->attribute.sval->name);
+		spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
 
 	}
 	else if (t->type == COMMA) {
 		gen_relop(t->right, "%r10");
-
+		spew("\tpushq\t%%r10\n");
 		gencode(t->left);
 	}
 	else if (t->type == RELOP) {
