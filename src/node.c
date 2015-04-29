@@ -7,6 +7,7 @@ node_t * node_create(char * name)
 {
 	node_t * p = (node_t *) calloc(1,sizeof(node_t));
 	p->name = strdup(name);
+	p->func = NULL;
 	return p;
 }
 

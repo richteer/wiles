@@ -130,9 +130,18 @@ subprogram_head
 		arguments ':' standard_type ';'
 			{ gen_stalloc(top->off_loc); }
 	| PROCEDURE ID
-			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
+			{
+				scope_insert(top, $2);
+				top = scope_push(top);
+				gen_intro($2);
+			}
 		arguments ';'
-			{ gen_stalloc(top->off_loc); }
+			{
+				node_t * n;
+				n = scope_search(top->next, $2);
+				scope_func(top, n);
+				gen_stalloc(top->off_loc);
+			}
 	;
 
 arguments
@@ -218,7 +227,9 @@ procedure_statement
 			if (gen_write($1, $3));
 			else if (gen_read($1, $3));
 			else {
-				gencode(t = make_tree(PROCEDURE_CALL, make_id(scope_searchall(top, $1)), $3));
+				t = make_tree(PROCEDURE_CALL, make_id(scope_searchall(top, $1)), $3);
+				assert(!sem_check(t));
+				gencode(t);
 				tree_free(t);
 			}
 		}

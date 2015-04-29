@@ -110,6 +110,32 @@ scope_t * scope_push(scope_t * top)
 	return new;
 }
 
+void scope_func(scope_t * top, node_t * fun)
+{
+	int i;
+	node_t * n;
+	typen_t * t;
+
+	assert(top);
+	assert(fun);
+
+	fun->func = calloc(1,sizeof(func_t));
+
+	for (i = 0; i < HASH_SIZE; i++) {
+		for (n = top->table[i]; n != NULL; n = n->next) {
+			if (n == fun) {
+				fprintf(stderr,"WLKAJHGSKJDHASKJDGASKJHDGASD\n");
+				continue;
+			}
+			(fun->func->numargs)++;
+			t = calloc(1, sizeof(typen_t));
+			t->type = n->type;
+			t->next = fun->func->types;
+			fun->func->types = t;
+		}
+	}
+}
+
 static void scope_free_list(node_t * n)
 {
 	node_t * t = NULL;

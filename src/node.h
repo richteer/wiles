@@ -1,11 +1,23 @@
 #ifndef _node_h_
 #define _node_h_
 
+typedef struct typen_s {
+	int type;
+	struct typen_s * next;
+} typen_t;
+
+typedef struct {
+	int numargs;
+	int rettype;
+	typen_t * types;
+} func_t;
+
 typedef struct node_s {
 	char * name;
 	int type;
 	int offset;
 	int depth;
+	func_t * func;
 	struct node_s * next;
 } node_t;
 
