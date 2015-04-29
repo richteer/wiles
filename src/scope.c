@@ -110,6 +110,28 @@ scope_t * scope_push(scope_t * top)
 	return new;
 }
 
+static void scope_free_list(node_t * n)
+{
+	node_t * t = NULL;
+
+	for (n = t; n && t ;) {
+		t = n->next;
+		node_free(n);
+		n = t;
+	}
+}
+
+static void scope_free(scope_t * scp)
+{
+	int i;
+
+	for (i = 0; i < HASH_SIZE; i++) {
+		scope_free_list(scp->table[i]);
+	}
+
+	free(scp);
+}
+
 // Pop first in scope
 scope_t * scope_pop(scope_t * top)
 {
@@ -117,7 +139,8 @@ scope_t * scope_pop(scope_t * top)
 
 	RETNULL(top);
 
-	tmp = top;
+	tmp = top->next;
+	scope_free(top);
 
-	return top->next;
+	return tmp;
 }

@@ -30,3 +30,9 @@ node_t * node_search(node_t * head, char * name)
 	}
 	return NULL;
 }
+
+void node_free(node_t * n)
+{
+	free(n->name);
+	free(n);
+}

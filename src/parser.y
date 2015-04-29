@@ -163,7 +163,12 @@ statement_list
 
 statement
 	: variable ASNOP expression
-		{ assert(!sem_check($3)); gencode(make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3)); }
+		{
+			tree_t * t;
+			assert(!sem_check($3));
+			gencode(t = make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3));
+			tree_free(t);
+		}
 	| procedure_statement
 	| compound_statement
 	| IF expression
@@ -179,6 +184,7 @@ statement
 				spew_jmp("jne", 0);
 				spew_jmp("jmp", 1);
 			}
+			tree_free($2);
 		}
 	THEN
 	{ gen_label(); }
@@ -194,7 +200,7 @@ statement
 	{ gen_label(); }
 	 statement
 	{ gen_label(); }
-	{ gencode($3); gen_jmp($3, -2); }
+	{ gencode($3); gen_jmp($3, -2); tree_free($3); }
 	;
 
 variable
@@ -207,10 +213,14 @@ procedure_statement
 	: ID
 	| ID '(' expression_list ')'
 		{
+			tree_t * t = NULL;
 			fprintf(stderr, "--->>> %s\n", $1);
 			if (gen_write($1, $3));
 			else if (gen_read($1, $3));
-			else gencode(make_tree(PROCEDURE_CALL, make_id(scope_searchall(top, $1)), $3));
+			else {
+				gencode(t = make_tree(PROCEDURE_CALL, make_id(scope_searchall(top, $1)), $3));
+				tree_free(t);
+			}
 		}
 	;
 
@@ -277,6 +287,8 @@ int main(int argc, char ** argv)
 	yyparse();
 
 	fclose(outsrc);
+
+	return 0;
 }
 
 int yyerror(char * msg)

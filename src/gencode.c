@@ -447,30 +447,10 @@ int gencode(tree_t * t)
 	}
 	else if (t->type == COMMA) {
 		gen_relop(t->right, "%r10");
-		/*
-		reg_init();
-		gen_rankify(t->right);
-		gen_go(t->right);
-		spew("\tpushq\t%s\n", registers[st.top->num]);
-		reg_deinit();
-		*/
+
 		gencode(t->left);
 	}
-	else if (t->type == RELOP) {/*
-		fprintf(stderr, "YEEEEP\n");
-		reg_init();
-		gen_rankify(t->left);
-		gen_go(t->left);
-		spew("\tpushq\t%s\n",registers[st.top->num]);
-		reg_deinit();
-		reg_init();
-		gen_rankify(t->right);
-		gen_go(t->right);
-		spew("\tmovq\t%s,%s\n","(%rsp)", "%rdx");
-		spew("\tpopq\t%s\n",registers[st.top->num]);
-		spew("\tcmpq\t%s,%s\n",registers[st.top->num], "%rdx");
-		reg_deinit();*/
-
+	else if (t->type == RELOP) {
 		gen_relop(t->left, "%rdx");
 		gen_relop(t->right, "%rbx");
 

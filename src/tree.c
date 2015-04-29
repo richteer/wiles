@@ -102,3 +102,19 @@ void tree_print(tree_t * t)
 	tprint(t, 0);
 	fprintf(stderr, "\n\n");
 }
+
+void tree_free(tree_t * t)
+{
+	if (!t) return;
+	if (!t->left && !t->right) {
+		free(t);
+		return;
+	}
+
+	if (t->left)
+		tree_free(t->left);
+	if (t->right)
+		tree_free(t->right);
+
+	return;
+}
