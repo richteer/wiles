@@ -10,6 +10,7 @@
 #include "gencode.h"
 
 extern scope_t * top;
+extern int linecount;
 
 int _verbose = 0;
 int offstat = 0;
@@ -280,6 +281,6 @@ int main(int argc, char ** argv)
 
 int yyerror(char * msg)
 {
-	fprintf(stderr, "Error: %s\n", msg);
+	fprintf(stderr, "Error on line %d: %s\n", linecount, msg);
 	exit(1);
 }

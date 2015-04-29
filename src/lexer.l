@@ -10,7 +10,7 @@
 #define DISPY(a) _verbose&&fprintf(stderr,"[%s{%s}]",#a,yytext);return a
 
 extern int _verbose;
-
+int linecount = 1;
 %}
 
 whitespace  [ \t]+
@@ -80,7 +80,7 @@ comment     \(\*.*\*\)
 
 {whitespace} { ; }
 {comment}    { ; }
-\n           { SHOW("%s", yytext); }
+\n           { SHOW("%s", yytext); linecount++; }
 .            { SHOW("<%c>", yytext[0]); return yytext[0]; }
 
 %%
