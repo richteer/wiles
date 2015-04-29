@@ -174,7 +174,13 @@ statement
 	statement
 	{ gen_label(); }
 
-	| WHILE expression DO statement
+	| WHILE
+	{ spew_jmp("jmp",1); }
+	expression DO
+	{ gen_label(); }
+	 statement
+	{ gen_label(); }
+	{ gencode($3); }
 	;
 
 variable
