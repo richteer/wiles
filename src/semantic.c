@@ -12,7 +12,11 @@ static int get_type(tree_t * t)
 	int l,r;
 
 	if (t->type == INUM) return INUM;
-	else if (t->type == ID) return t->attribute.sval->type;
+	else if (t->type == ID) {fprintf(stderr, "TYPECHECK: %s is %d\n", t->attribute.sval->name, t->attribute.sval->type); return t->attribute.sval->type; }
+	else if (t->type == FUNCTION_CALL) {
+		fprintf(stderr, "FUNCTION CALLLLLLLLL\n");
+		return t->left->attribute.sval->func->rettype;
+	}
 	else if ((t->type == ADDOP) || (t->type == MULOP)) {
 		l = get_type(t->left);
 		r = get_type(t->right);
@@ -72,8 +76,20 @@ static int asnop_findproc(tree_t * t)
 
 static int sem_asnop(tree_t * t)
 {
+	int r;
+	// Case for returning in functions
+	fprintf(stderr, "asnop checking %d <--> %d\n", t->left->type, t->right->type);
+	if (t->left->type == ID && t->left->attribute.sval->func && t->left->attribute.sval->func->rettype) {
+		if (t->left->attribute.sval->func->rettype != (r = get_type(t->right))) {
+			fprintf(stderr, "Error: Returning a type other than the return type of the function%d <--> %d\n", t->left->attribute.sval->func->rettype, r);
+			return 3;
+		}
+		fprintf(stderr, "ITS GOOOOOOOOOD\n");
+		return 0;
+	}
 
-	if (get_type(t->left) != get_type(t->right)) {
+	if (t->type == ID && t->left->attribute.sval->type != (r = get_type(t->right))) {
+		fprintf(stderr, "Error: tried to assign a type %d to a type %d\n", r, t->left->type);
 		return 1;
 	}
 

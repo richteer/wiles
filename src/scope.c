@@ -110,7 +110,7 @@ scope_t * scope_push(scope_t * top)
 	return new;
 }
 
-void scope_func(scope_t * top, node_t * fun)
+void scope_func(scope_t * top, node_t * fun, int type)
 {
 	int i;
 	node_t * n;
@@ -120,6 +120,7 @@ void scope_func(scope_t * top, node_t * fun)
 	assert(fun);
 
 	fun->func = calloc(1,sizeof(func_t));
+	fun->func->rettype = type;
 
 	for (i = 0; i < HASH_SIZE; i++) {
 		for (n = top->table[i]; n != NULL; n = n->next) {
@@ -135,6 +136,8 @@ void scope_func(scope_t * top, node_t * fun)
 		}
 	}
 }
+
+
 
 static void scope_free_list(node_t * n)
 {

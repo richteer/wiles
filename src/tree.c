@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -117,4 +118,15 @@ void tree_free(tree_t * t)
 		tree_free(t->right);
 
 	return;
+}
+
+void tree_typeify(tree_t * t, int type)
+{
+	if (!t) return;
+	fprintf(stderr, "TYPEIFY %d\n", t->type);
+	assert(t->type == COMMA);
+
+	t->right->attribute.sval->type = type;
+	tree_typeify(t->left, type);
+
 }

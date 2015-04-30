@@ -22,6 +22,7 @@ tree_t * make_id(node_t * nd);
 tree_t * make_op(int type, int attr, tree_t * left, tree_t * right);
 void tree_print(tree_t *);
 void tree_free(tree_t *);
+void tree_typeify(tree_t * t, int type);
 
 int typeify(tree_t *, int type);
 #endif

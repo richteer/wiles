@@ -84,14 +84,14 @@ program
 
 identifier_list
 	: ID
-    	{ fprintf(stderr, "derpings %s\n", $1); $$ = make_id(scope_insert(top, $1)); }
+    	{ fprintf(stderr, "derpings %s\n", $1); $$ = make_tree(COMMA, NULL, make_id(scope_insert(top, $1))); }
 	| identifier_list ',' ID
     	{ $$ = make_tree(COMMA, $1, make_id(scope_insert(top, $3))); }
 	;
 
 declarations
 	: declarations VAR identifier_list ':' type ';'
-		{ typeify($3, $5); $$ = $3; }
+		{ tree_typeify($3, $5); $$ = $3; }
 	|
 		{ $$ = NULL; }
 	;
@@ -126,9 +126,18 @@ subprogram_declaration
 
 subprogram_head
 	: FUNCTION ID
-			{ scope_insert(top, $2); top = scope_push(top); gen_intro($2); }
+			{
+				scope_insert(top, $2);
+				top = scope_push(top);
+				gen_intro($2);
+			}
 		arguments ':' standard_type ';'
-			{ gen_stalloc(top->off_loc); }
+			{
+				node_t * n;
+				n = scope_search(top->next, $2);
+				scope_func(top, n, $6);
+				gen_stalloc(top->off_loc);
+			}
 	| PROCEDURE ID
 			{
 				scope_insert(top, $2);
@@ -139,7 +148,7 @@ subprogram_head
 			{
 				node_t * n;
 				n = scope_search(top->next, $2);
-				scope_func(top, n);
+				scope_func(top, n, 0);
 				gen_stalloc(top->off_loc);
 			}
 	;
@@ -153,6 +162,9 @@ arguments
 
 parameter_list
 	: identifier_list ':' type
+		{
+			tree_typeify($1, $3);
+		}
 	| parameter_list ';' identifier_list ':' type
 	;
 
@@ -174,8 +186,11 @@ statement
 	: variable ASNOP expression
 		{
 			tree_t * t;
-			assert(!sem_check($3));
-			gencode(t = make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3));
+			t = make_tree(ASNOP, make_id(scope_searchall(top, $1)), $3);
+			fprintf(stderr, "trying to assign to %s:%d\n", $1, t->left->type);
+			tree_print(t);
+			assert(!sem_check(t));
+			gencode(t);
 			tree_free(t);
 		}
 	| procedure_statement

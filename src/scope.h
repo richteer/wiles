@@ -27,6 +27,6 @@ scope_t * make_scope(void);
 scope_t * scope_push(scope_t * top);
 scope_t * scope_pop(scope_t * top);
 
-void scope_func(scope_t * top, node_t * fun);
+void scope_func(scope_t * top, node_t * fun, int type);
 
 #endif

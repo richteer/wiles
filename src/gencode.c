@@ -432,18 +432,41 @@ int gencode(tree_t * t)
 			spew("\tmovq\t%%rdx, %d(%%rbp)\n", t->left->attribute.sval->offset);
 			goto end;
 		}
-		gen_rankify(t->right);
+		else if (t->left->type == ID && t->left->attribute.sval->func) {
+			gen_rankify(t->right);
+			reg_init();
+			gen_go(t->right);
+			spew("\tmovq\t%s, %%rax\n", registers[st.top->num]);
+			reg_deinit();
+			goto end;
+		}
+		else if (t->right->type == FUNCTION_CALL) {
+			gencode(t->right->right);
+			spew("\tcall\t%s\n", t->right->left->attribute.sval->name);
+			spew("\taddq\t$%d, %%rsp\n", t->right->left->attribute.sval->func->numargs*8);
+			spew_id("\tmovq\t%%rax, %s\n", t->left, NULL);
+			goto end;
+		}
 		fprintf(stderr, "ASNOP to a %d\n", t->right->attribute.opval);
-		reg_init();
-		gen_rankify(t->right);
-		gen_go(t->right);
-		spew("\tmovq\t%s, %d(%%rbp)\n", registers[st.top->num], t->left->attribute.sval->offset);
-		reg_deinit();
+		//gen_rankify(t->right);
+		//reg_init();
+		//gen_rankify(t->right);
+		//gen_go(t->right);
+		//reg_deinit();
+		gencode(t->right);
+		spew("\tmovq\t%s, %d(%%rbp)\n", registers[0], t->left->attribute.sval->offset);
 	}
 	else if (t->type == PROCEDURE_CALL) {
 		gencode(t->right);
 		spew("\tcall\t%s\n", t->left->attribute.sval->name);
 		spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
+
+	}
+	else if (t->type == FUNCTION_CALL) {
+		assert(0); // NOT IMPLEMENTED
+		spew("\tcall\t%s\n", t->left->attribute.sval->name);
+		spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
+		spew("\tmovq\t%%rax, \n");
 
 	}
 	else if (t->type == COMMA) {
