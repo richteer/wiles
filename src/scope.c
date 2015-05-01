@@ -108,10 +108,10 @@ scope_t * make_scope(void)
 }
 
 // Push new scope
-scope_t * scope_push(scope_t * top)
+scope_t * scope_push(scope_t * top, int type)
 {
 	scope_t * new = make_scope();
-
+	new->type = type;
 	new->next = top;
 	return new;
 }

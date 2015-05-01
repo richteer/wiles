@@ -66,7 +66,7 @@ FILE * outsrc;
 %%
 
 program
-	: { gen_preamble(); top = scope_push(top); }
+	: { gen_preamble(); top = scope_push(top, PROCEDURE); }
 		PROGRAM ID '(' identifier_list ')' ';'
 	{ offstat = -1; }
 		declarations
@@ -120,7 +120,9 @@ subprogram_declaration
 		{ offstat = 0; }
 	compound_statement
 		{
-			gen_dealloc(top->off_loc); top = scope_pop(top); gen_outro();
+			gen_dealloc(top->off_loc);
+			top = scope_pop(top);
+			gen_outro();
 		}
 	;
 
@@ -128,7 +130,7 @@ subprogram_head
 	: FUNCTION ID
 			{
 				scope_insert(top, $2);
-				top = scope_push(top);
+				top = scope_push(top, FUNCTION);
 				gen_intro($2);
 			}
 		arguments ':' standard_type ';'
@@ -141,7 +143,7 @@ subprogram_head
 	| PROCEDURE ID
 			{
 				scope_insert(top, $2);
-				top = scope_push(top);
+				top = scope_push(top, PROCEDURE);
 				gen_intro($2);
 			}
 		arguments ';'

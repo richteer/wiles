@@ -479,8 +479,17 @@ int gencode(tree_t * t)
 	printf("gencoding\n");
 
 	if (t->type == ASNOP) {
-		if (t->left->type == ID && t->left->attribute.sval->func) {
+		if (top->type == FUNCTION && !scope_search(top, t->left->attribute.sval->name)) {
+			fprintf(stderr, "Error: Cannot assign to non-local variable '%s' from a function\n", t->left->attribute.sval->name);
+			assert(0);
+		}
+		if (t->left->attribute.sval->func) {
 			// Return case
+			if (top->type != FUNCTION) {
+				fprintf(stderr, "Error: Attempting to return in a non-procedure\n");
+				assert(0);
+			}
+
 			if (t->right->type == INUM) {
 				spew("\tmovq\t$%d, %%rax\n", t->right->attribute.ival);
 				goto end;
