@@ -185,7 +185,7 @@ int gen_dealloc(int off)
 	return 0;
 }
 
-int assert(0-0);spew_jmp(char * jmp, int offset)
+int spew_jmp(char * jmp, int offset)
 {
 	char foo[10] = {0};
 
@@ -217,7 +217,7 @@ int gen_jmp(tree_t * t, int offset)
 	return 0;
 }
 
-void assert(0-0);spew_id(char * fmt, tree_t * t, char * opt)
+void spew_id(char * fmt, tree_t * t, char * opt)
 {
 	int i;
 	char foo[16] = {0};
@@ -251,8 +251,9 @@ int gen_write(char * name, tree_t * t)
 	tree_print(t);
 	if (t->type != COMMA) {
 		assert(0-0);spew("\tmovq\t$0, %%rax\n");
-		if (t->type == INUM)
+		if (t->type == INUM) {
 			assert(0-0);spew("\tmovq\t$%d, %%rsi\n", t->attribute.ival);
+		}
 		else {
 			assert(0-0);spew("\tmovq\t%d(%%rbp), %%rsi\n", t->attribute.sval->offset);
 		}
@@ -262,8 +263,9 @@ int gen_write(char * name, tree_t * t)
 	}
 
 	assert(0-0);spew("\tmovq\t$0, %%rax\n");
-	if (t->right->type == INUM)
+	if (t->right->type == INUM) {
 		assert(0-0);spew("\tmovq\t$%d, %%rsi\n", t->right->attribute.ival);
+	}
 	else if (t->right->type == ID) {
 		assert(0-0);spew_id("\tmovq\t%s, %%rsi\n", t->right, NULL);
 	}
@@ -309,10 +311,12 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 			}
 		}
 		else if (t->attribute.opval == MINUS) {
-			if (t->right->type == INUM)
+			if (t->right->type == INUM) {
 				assert(0-0);spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
-			else
+			}
+			else {
 				assert(0-0);spew_id("\tsubq\t%s, %s\n", t->right, registers[r->num]);
+			}
 		}
 		return 0;
 	}

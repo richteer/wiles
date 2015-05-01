@@ -2,7 +2,7 @@
 
 SHELL  = bash
 TARGET = wiles
-CC     = gcc
+CC     = clang
 YACC   = bison
 LEX    = flex
 
