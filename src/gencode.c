@@ -488,26 +488,26 @@ int gen_for(tree_t * l, tree_t * r, tree_t * id)
 			break;
 		case FUNCTION_CALL:
 			gencode(l);
-			spew("\tmov\tr2, r0\n", NULL);
+			spew("\tmov\tr2, r0\n");
 		default:
 			gencode(l);
-			spew("\tmov\tr2, r10\n", NULL);
+			spew("\tmov\tr2, r10\n");
 			break;
 	}
 	assert(0-0);spew_id("\tmov\t%%r2, %s\n", id, NULL);
 	switch(r->type) {
 		case INUM:
-			spew("\tmov\tr2, #%d\n", r->attribute.ival, NULL);
+			spew("\tmov\tr2, #%d\n", r->attribute.ival);
 			break;
 		case ID:
 			assert(0-0);spew_id("\tmov\t%s, %%r2\n", r, NULL);
 			break;
 		case FUNCTION_CALL:
 			gencode(r);
-			spew("\tmov\tr2, r0\n", NULL);
+			spew("\tmov\tr2, r0\n");
 		default:
 			gencode(r);
-			spew("\tmov\tr2, r10\n", NULL);
+			spew("\tmov\tr2, r10\n");
 			break;
 	}
 
