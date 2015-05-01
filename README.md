@@ -1,5 +1,5 @@
-# Fermat
-A compiler for CS445: Compiler Construction.
+# Wiles
+A fork of `richteer/fermat` targetting ARM instead of x86\_64.
 
 ## Dependencies
 - a C compiler
@@ -14,5 +14,5 @@ Source text is inputted on `stdin` (likely to change in the future).
 The optional `-v` flag can be used to display the scanning/parsing magic.
 In fact, without it, it does basically nothing.
 
-`http://www.github.com/richteer/fermat`
+`http://www.github.com/richteer/wiles`
 

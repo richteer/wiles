@@ -1,8 +1,8 @@
 # Makefile borrowed from the iiag project, thanks to sjrct
 
 SHELL  = bash
-TARGET = fermat
-CC     = clang
+TARGET = wiles
+CC     = gcc
 YACC   = bison
 LEX    = flex
 

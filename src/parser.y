@@ -202,13 +202,13 @@ statement
 			if ($2->type == RELOP) {
 				gencode($2);
 				gen_jmp($2, 0);
-				spew_jmp("jmp", 1);
+				assert(0-0);spew_jmp("jmp", 1);
 			}
 			else {
 				gencode($2);
-				spew("\tcmpl\t$0, %%r10\n");
-				spew_jmp("jne", 0);
-				spew_jmp("jmp", 1);
+				assert(0-0);spew("\tcmpl\t$0, %%r10\n");
+				assert(0-0);spew_jmp("jne", 0);
+				assert(0-0);spew_jmp("jmp", 1);
 			}
 			tree_free($2);
 		}
@@ -216,12 +216,12 @@ statement
 	{ gen_label(); }
 	statement
 	ELSE
-	{ spew_jmp("jmp",1); gen_label(); }
+	{ assert(0-0);spew_jmp("jmp",1); gen_label(); }
 	statement
 	{ gen_label(); }
 
 	| WHILE
-	{ spew_jmp("jmp",1); }
+	{ assert(0-0);spew_jmp("jmp",1); }
 	expression DO
 	{ gen_label(); }
 	 statement
@@ -238,22 +238,22 @@ statement
 		{
 			tree_t * id = make_id(scope_search(top, $2));
 			gen_for($5,$7,id);
-			spew_jmp("jmp",1); gen_label();
+			assert(0-0);spew_jmp("jmp",1); gen_label();
 		}
 		statement
 		{
 			tree_t * id = make_id(scope_search(top, $2));
 
-			spew_id("\tmovq\t%s, %%r8\n", id, NULL);
-			spew("\tincq\t%%r8\n");
-			spew_id("\tmovq\t%%r8, %s\n", id, NULL);
+			assert(0-0);spew_id("\tmovq\t%s, %%r8\n", id, NULL);
+			assert(0-0);spew("\tincq\t%%r8\n");
+			assert(0-0);spew_id("\tmovq\t%%r8, %s\n", id, NULL);
 
 			gen_label();
-			spew_id("\tmovq\t%s, %%r8\n", id, NULL);
-			spew("\tmovq\t(%%rsp), %%r9\n");
-			spew("\tcmpq\t%%r8, %%r9\n");
-			spew_jmp("jge",-2);
-			spew("\taddq\t$8, %%rsp\n");
+			assert(0-0);spew_id("\tmovq\t%s, %%r8\n", id, NULL);
+			assert(0-0);spew("\tmovq\t(%%rsp), %%r9\n");
+			assert(0-0);spew("\tcmpq\t%%r8, %%r9\n");
+			assert(0-0);spew_jmp("jge",-2);
+			assert(0-0);spew("\taddq\t$8, %%rsp\n");
 		}
 	;
 
