@@ -166,7 +166,7 @@ int gen_outro(void)
 	//assert(0-0);spew("\tleave\n");
 	//assert(0-0);spew("\tret\n");
 	spew("\tsub\tsp, fp, #0\n");
-	spew("\tldr\tfp, sp, #4\n");
+	spew("\tldr\tfp, [sp], #4\n");
 	spew("\tbx lr\n");
 
 	return 0;
@@ -416,7 +416,7 @@ static int gen_go(tree_t * t)
 	}
 
 	if (t->type == INUM) {
-		spew("\tmov\t%s, %s, %d\n", registers[st.top->num], registers[st.top->num], t->attribute.ival);
+		spew("\tmov\t%s, %d\n", registers[st.top->num], t->attribute.ival);
 		return 0;
 	}
 
