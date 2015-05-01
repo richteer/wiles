@@ -422,7 +422,26 @@ int gencode(tree_t * t)
 	printf("gencoding\n");
 
 	if (t->type == ASNOP) {
-		if (t->right->type == INUM) {
+		if (t->left->type == ID && t->left->attribute.sval->func) {
+			// Return case
+
+			if (t->right->type == INUM) {
+				spew("\tmovq\t$%d, %%rax\n", t->right->attribute.ival);
+				goto end;
+			}
+			else if (t->right->type == ID) {
+				spew_id("\tmovq\t%s, %%rax", t->right, NULL);
+			}
+
+			//gen_rankify(t->right);
+			//reg_init();
+			gencode(t->right);
+			//gen_go(t->right);
+			spew("\tmovq\t%s, %%rax\n", registers[0]);
+			//reg_deinit();
+			goto end;
+		}
+		else if (t->right->type == INUM) {
 			spew("\tmovq\t$%d, %d(%%rbp)\n", t->right->attribute.ival, t->left->attribute.sval->offset);
 			goto end;
 		}
@@ -430,14 +449,6 @@ int gencode(tree_t * t)
 			// This might cause issues with scoping
 			spew("\tmovq\t%d(%%rbp), %%rdx\n", t->right->attribute.sval->offset);
 			spew("\tmovq\t%%rdx, %d(%%rbp)\n", t->left->attribute.sval->offset);
-			goto end;
-		}
-		else if (t->left->type == ID && t->left->attribute.sval->func) {
-			gen_rankify(t->right);
-			reg_init();
-			gen_go(t->right);
-			spew("\tmovq\t%s, %%rax\n", registers[st.top->num]);
-			reg_deinit();
 			goto end;
 		}
 		else if (t->right->type == FUNCTION_CALL) {
@@ -463,10 +474,11 @@ int gencode(tree_t * t)
 
 	}
 	else if (t->type == FUNCTION_CALL) {
-		assert(0); // NOT IMPLEMENTED
+		//assert(0); // NOT IMPLEMENTED
+		gencode(t->right);
 		spew("\tcall\t%s\n", t->left->attribute.sval->name);
 		spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
-		spew("\tmovq\t%%rax, \n");
+		//spew("\tmovq\t%%rax, \n");
 
 	}
 	else if (t->type == COMMA) {
