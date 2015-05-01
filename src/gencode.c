@@ -416,7 +416,7 @@ static int gen_go(tree_t * t)
 	}
 
 	if (t->type == INUM) {
-		spew("\tmov\t%s, %d\n", registers[st.top->num], t->attribute.ival);
+		spew("\tmov\t%s, #%d\n", registers[st.top->num], t->attribute.ival);
 		return 0;
 	}
 
