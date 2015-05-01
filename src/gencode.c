@@ -264,9 +264,14 @@ int gen_write(char * name, tree_t * t)
 	spew("\tmovq\t$0, %%rax\n");
 	if (t->right->type == INUM)
 		spew("\tmovq\t$%d, %%rsi\n", t->right->attribute.ival);
-	else {
+	else if (t->right->type == ID) {
 		spew_id("\tmovq\t%s, %%rsi\n", t->right, NULL);
 	}
+	else {
+		gencode(t->right);
+		spew("\tmovq\t%s, %%rsi\n", registers[0]);
+	}
+	spew("\tmovq\t$0, %%rax\n");
 	spew("\tmovq\t$.LC0, %%rdi\n");
 	spew("\tcall\tprintf\n");
 	gen_write("write", t->left);
@@ -294,8 +299,8 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
 		if (t->attribute.opval == PLUS) {
-			spew_id("\taddq\t%s,%s\n",t->right, registers[r->num]);
-			return 0;
+			//spew_id("\taddq\t%s,%s\n",t->right, registers[r->num]);
+			//return 0; // WAAATTTT am i doing here
 			if (t->right->type == INUM) {
 				spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
 			}
@@ -307,13 +312,18 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 			if (t->right->type == INUM)
 				spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
 			else
-				spew_id("\tsubq\t$%d, %s\n", t->right, registers[r->num]);
+				spew_id("\tsubq\t%s, %s\n", t->right, registers[r->num]);
 		}
 		return 0;
 	}
 	assert(r);
 	fprintf(stderr,"yep,getting here\n");
-	spew("\taddq\t%s, %s\n", registers[l->num], registers[r->num]);
+	if (t->attribute.opval == PLUS) {
+		spew("\taddq\t%s, %s\n", registers[l->num], registers[r->num]);
+	}
+	else {
+		spew("\tsubq\t%s, %s\n", registers[l->num], registers[r->num]);
+	}
 
 	return 0;
 }
@@ -321,12 +331,59 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 static int gen_mulop(tree_t * t, reg_t * l, reg_t * r)
 {
 	if (l == NULL) {
-		spew("\timulq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+		if (t->attribute.opval == STAR) {
+			spew_id("\timulq\t%s, %s\n", t->right, registers[r->num]);
+		}
+		else if (t->attribute.opval == DIV) {
+			spew("\tpushq\t%%rdx\n");
+			spew("\tpushq\t%%rax\n");
+			spew("\tmovq\t%s, %%rax\n", registers[r->num]);
+			spew("\tmovq\t$0, %%rdx\n");
+			spew_id("\tmovq\t%s, %%rbx\n", t->right, NULL);
+			spew("\tidivq\t%%rbx\n");
+			spew("\tmovq\t%%rax, %s\n", registers[r->num]);
+			spew("\tpopq\t%%rax\n");
+			spew("\tpopq\t%%rdx\n");
+		}
+		else if (t->attribute.opval == MOD) {
+			spew("\tpushq\t%%rdx\n");
+			spew("\tpushq\t%%rax\n");
+			spew("\tmovq\t%s, %%rax\n", registers[r->num]);
+			spew("\tmovq\t$0, %%rdx\n");
+			spew_id("\tmovq\t%s, %%rbx\n", t->right, NULL);
+			spew("\tidivq\t%%rbx\n");
+			spew("\tmovq\t%%rdx, %s\n", registers[r->num]);
+			spew("\tpopq\t%%rax\n");
+			spew("\tpopq\t%%rdx\n");
+		}
 		return 0;
 	}
 	assert(r);
 
-	spew("\timulq\t%s, %s\n", registers[l->num], registers[r->num]);
+	if (t->attribute.opval == STAR) {
+		spew("\timulq\t%s, %s\n", registers[l->num], registers[r->num]);
+	}
+	else if (t->attribute.opval == DIV) {
+		spew("\tpushq\t%%rax\n");
+		spew("\tpushq\t%%rdx\n");
+		spew("\tmovq\t%s, %%rax\n", registers[r->num]);
+		spew("\tmovq\t$0, %%rdx\n");
+		spew("\tidivq\t%s", registers[l->num]);
+		spew("\tmovq\t%%rax, %s\n", registers[r->num]);
+		spew("\tpopq\t%%rdx\n");
+		spew("\tpopq\t%%rax\n");
+	}
+	else if (t->attribute.opval == MOD) {
+		spew("\tpushq\t%%rax\n");
+		spew("\tpushq\t%%rdx\n");
+		spew("\tmovq\t%s, %%rax\n", registers[r->num]);
+		spew("\tmovq\t$0, %%rdx\n");
+		spew("\tidivq\t%s", registers[l->num]);
+		spew("\tmovq\t%%rdx, %s\n", registers[r->num]);
+		spew("\tpopq\t%%rdx\n");
+		spew("\tpopq\t%%rax\n");
+	}
+
 
 	return 0;
 }
@@ -424,7 +481,6 @@ int gencode(tree_t * t)
 	if (t->type == ASNOP) {
 		if (t->left->type == ID && t->left->attribute.sval->func) {
 			// Return case
-
 			if (t->right->type == INUM) {
 				spew("\tmovq\t$%d, %%rax\n", t->right->attribute.ival);
 				goto end;
@@ -432,7 +488,9 @@ int gencode(tree_t * t)
 			else if (t->right->type == ID) {
 				spew_id("\tmovq\t%s, %%rax", t->right, NULL);
 			}
-
+			else if (t->right->type == FUNCTION_CALL) {
+				assert(NULL != NULL);
+			}
 			//gen_rankify(t->right);
 			//reg_init();
 			gencode(t->right);
@@ -474,11 +532,10 @@ int gencode(tree_t * t)
 
 	}
 	else if (t->type == FUNCTION_CALL) {
-		//assert(0); // NOT IMPLEMENTED
 		gencode(t->right);
 		spew("\tcall\t%s\n", t->left->attribute.sval->name);
 		spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
-		//spew("\tmovq\t%%rax, \n");
+		spew("\tmovq\t%%rax, %%r10\n");
 
 	}
 	else if (t->type == COMMA) {
@@ -493,7 +550,14 @@ int gencode(tree_t * t)
 		spew("\tcmpq\t%%rbx, %%rdx\n");
 
 	}
+	else if ((t->type == ADDOP) || (t->type == MULOP)) {
+		gen_rankify(t);
+		reg_init();
+		gen_go(t);
+		reg_deinit();
+	}
 	else {
+		fprintf(stderr, "WAT. Got type %d\n", t->type);
 		assert(0);
 	}
 
