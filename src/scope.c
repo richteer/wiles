@@ -54,6 +54,11 @@ node_t * scope_insert(scope_t * scp, char * name)
 
 	RETNULL(scp);
 
+	if (scope_search(scp, name)) {
+		fprintf(stderr, "ERROR! Name '%s' already defined in this scope!\n", name);
+		assert(0);
+	}
+
 	DEBUG("Inserting %s\n",name);
 
 	i = hashpjw(name);
@@ -89,7 +94,8 @@ node_t * scope_searchall(scope_t * scp, char * name)
 	}
 
 	depth = 0;
-	fprintf(stderr, "Warning, could not find id '%s'\n", name);
+	fprintf(stderr, "Error: could not find id '%s', did you declare it?\n", name);
+	assert(0);
 	return NULL;
 }
 
