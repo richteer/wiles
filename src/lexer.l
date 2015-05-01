@@ -66,6 +66,7 @@ comment     \(\*.*\*\)
 "real"      { DISP(REAL); }
 "then"      { DISP(THEN); }
 "end"       { DISP(END); }
+"for"       { DISP(FOR); }
 "not"       { DISP(NOT); }
 "var"       { DISP(VAR); }
 "if"        { DISP(IF); }

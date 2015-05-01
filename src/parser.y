@@ -40,7 +40,7 @@ FILE * outsrc;
 %token BEGINN END
 %token ARRAY RANGE OF
 %token IF THEN ELSE NOT
-%token DO WHILE
+%token DO WHILE FOR
 %token VAR INTEGER REAL NUM
 
 %token COMMA
@@ -227,6 +227,34 @@ statement
 	 statement
 	{ gen_label(); }
 	{ gencode($3); gen_jmp($3, -2); tree_free($3); }
+	| FOR ID ASNOP
+		{
+			if (!scope_search(top, $2)) {
+				fprintf(stderr, "Error: FOR indexer must be in local scope\n");
+				assert(0);
+			}
+		}
+		expression RANGE expression DO
+		{
+			tree_t * id = make_id(scope_search(top, $2));
+			gen_for($5,$7,id);
+			spew_jmp("jmp",1); gen_label();
+		}
+		statement
+		{
+			tree_t * id = make_id(scope_search(top, $2));
+
+			spew_id("\tmovq\t%s, %%r8\n", id, NULL);
+			spew("\tincq\t%%r8\n");
+			spew_id("\tmovq\t%%r8, %s\n", id, NULL);
+
+			gen_label();
+			spew_id("\tmovq\t%s, %%r8\n", id, NULL);
+			spew("\tmovq\t(%%rsp), %%r9\n");
+			spew("\tcmpq\t%%r8, %%r9\n");
+			spew_jmp("jge",-2);
+			spew("\taddq\t$8, %%rsp\n");
+		}
 	;
 
 variable

@@ -217,7 +217,7 @@ int gen_jmp(tree_t * t, int offset)
 	return 0;
 }
 
-static void spew_id(char * fmt, tree_t * t, char * opt)
+void spew_id(char * fmt, tree_t * t, char * opt)
 {
 	int i;
 	char foo[16] = {0};
@@ -469,6 +469,45 @@ static void gen_relop(tree_t * t, char * reg)
 			spew("\tmovq\t%%r10, %s\n", reg);
 		reg_deinit();
 	}
+}
+
+int gen_for(tree_t * l, tree_t * r, tree_t * id)
+{
+	switch(l->type) {
+		case INUM:
+			spew("\tmovq\t$%d, %%r9\n", l->attribute.ival, NULL);
+			break;
+		case ID:
+			spew_id("\tmovq\t%s, %%r9\n", l, NULL);
+			break;
+		case FUNCTION_CALL:
+			gencode(l);
+			spew("\tmovq\t%%rax, %%r9\n", NULL);
+		default:
+			gencode(l);
+			spew("\tmovq\t%%r10, %%r9\n", NULL);
+			break;
+	}
+	spew_id("\tmovq\t%%r9, %s\n", id, NULL);
+	switch(r->type) {
+		case INUM:
+			spew("\tmovq\t$%d, %%r9\n", r->attribute.ival, NULL);
+			break;
+		case ID:
+			spew_id("\tmovq\t%s, %%r9\n", r, NULL);
+			break;
+		case FUNCTION_CALL:
+			gencode(r);
+			spew("\tmovq\t%%rax, %%r9\n", NULL);
+		default:
+			gencode(r);
+			spew("\tmovq\t%%r10, %%r9\n", NULL);
+			break;
+	}
+
+	spew("\tpushq\t%%r9\n");
+
+	return 0;
 }
 
 int gencode(tree_t * t)
