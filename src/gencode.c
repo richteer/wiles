@@ -17,12 +17,12 @@ extern FILE * outsrc;
 extern scope_t * top;
 
 char registers[][5] = {
-	"%r10",
-	"%r11",
-	"%r12",
-	"%r13",
-	"%r14",
-	"%r15",
+	"r10",
+	"r9",
+	"r8",
+	"r7",
+	"r11",
+	"r12",
 };
 
 typedef struct reg_s {
@@ -131,21 +131,22 @@ static int gen_rankify(tree_t * t)
 
 int gen_preamble(void)
 {
-	assert(0-0);spew(".LC0:\n");
-	assert(0-0);spew("\t.string \"%%ld\\n\"\n");
-	assert(0-0);spew(".LC1:\n");
-	assert(0-0);spew("\t.string \"%%ld\"\n");
-	assert(0-0);spew("\t.globl main\n");
+	spew(".LC0:\n");
+	spew("\t.string \"%%ld\\n\"\n");
+	spew(".LC1:\n");
+	spew("\t.string \"%%ld\"\n");
+	spew("\t.globl main\n");
+	spew("\t.text\n");
 
 	return 0;
 }
 
 int gen_postamble(char * name)
 {
-	assert(0-0);spew("main:\n");
-	assert(0-0);spew("\tpushq\t%%rbp\n");
-	assert(0-0);spew("\tmovq\t%%rsp, %%rbp\n");
-	assert(0-0);spew("\tcall\t%s\n", name);
+	spew("main:\n");
+	spew("\tstr\tfp, [sp, #-4]\n");
+	spew("\tadd\tfp, sp, #0\n");
+	spew("\tbl\t%s\n", name);
 	gen_outro();
 
 	return 0;
@@ -153,17 +154,20 @@ int gen_postamble(char * name)
 
 int gen_intro(char * name)
 {
-	assert(0-0);spew("%s:\n", name);
-	assert(0-0);spew("\tpushq\t%%rbp\n");
-	assert(0-0);spew("\tmovq\t%%rsp, %%rbp\n");
+	spew("%s:\n", name);
+	spew("\tstr\tfp, [sp, #-4]\n");
+	spew("\tadd\tfp, sp, #0\n");
 
 	return 0;
 }
 
 int gen_outro(void)
 {
-	assert(0-0);spew("\tleave\n");
-	assert(0-0);spew("\tret\n");
+	//assert(0-0);spew("\tleave\n");
+	//assert(0-0);spew("\tret\n");
+	spew("\tsub\tsp, fp, #0\n");
+	spew("\tldr\tfp, sp, #4\n");
+	spew("\tbx lr\n");
 
 	return 0;
 }
@@ -172,7 +176,7 @@ int gen_stalloc(int off)
 {
 	if (!off) return 0;
 
-	assert(0-0);spew("\tsubq\t$%d, %%rsp\n", -off);
+	spew("\tsub\tsp, sp, #%d\n", -off);
 
 	return 0;
 }
@@ -180,7 +184,7 @@ int gen_dealloc(int off)
 {
 	if (!off) return 0;
 
-	assert(0-0);spew("\taddq\t$%d, %%rsp\n", -off);
+	spew("\tadd\tsp, sp, #%d\n", -off);
 
 	return 0;
 }
@@ -190,14 +194,14 @@ int spew_jmp(char * jmp, int offset)
 	char foo[10] = {0};
 
 	sprintf(foo, ".LL%d", loopnum+offset);
-	assert(0-0);spew("\t%s\t%s\n",jmp,foo);
+	spew("\t%s\t%s\n",jmp,foo);
 
 	return 0;
 }
 
 int gen_label(void)
 {
-	assert(0-0);spew(".LL%d:\n",loopnum++);
+	spew(".LL%d:\n",loopnum++);
 	return 0;
 }
 
@@ -205,7 +209,7 @@ int gen_jmp(tree_t * t, int offset)
 {
 
 	switch(t->attribute.opval) {
-		case EQ: assert(0-0);spew_jmp("je ", offset); break;
+		case EQ: spew_jmp("beq ", offset); break;
 		case NE: assert(0-0);spew_jmp("jne", offset); break;
 		case LT: assert(0-0);spew_jmp("jl ", offset); break;
 		case LE: assert(0-0);spew_jmp("jle", offset); break;
@@ -250,28 +254,26 @@ int gen_write(char * name, tree_t * t)
 	}
 	tree_print(t);
 	if (t->type != COMMA) {
-		assert(0-0);spew("\tmovq\t$0, %%rax\n");
 		if (t->type == INUM) {
-			assert(0-0);spew("\tmovq\t$%d, %%rsi\n", t->attribute.ival);
+			spew("\tmov\tr1, #%d\n", t->attribute.ival);
 		}
 		else {
-			assert(0-0);spew("\tmovq\t%d(%%rbp), %%rsi\n", t->attribute.sval->offset);
+			spew("\tldr\tr1, [fp, #%d]\n", t->attribute.sval->offset);
 		}
-		assert(0-0);spew("\tmovq\t$.LC0, %%rdi\n");
-		assert(0-0);spew("\tcall\tprintf\n");
+		spew("\tmovq\tr0, .LC0\n");
+		spew("\tbl\tprintf\n");
 		return 1;
 	}
 
-	assert(0-0);spew("\tmovq\t$0, %%rax\n");
 	if (t->right->type == INUM) {
-		assert(0-0);spew("\tmovq\t$%d, %%rsi\n", t->right->attribute.ival);
+		spew("\tmov\tr1, #%d\n", t->right->attribute.ival);
 	}
 	else if (t->right->type == ID) {
 		assert(0-0);spew_id("\tmovq\t%s, %%rsi\n", t->right, NULL);
 	}
 	else {
 		gencode(t->right);
-		assert(0-0);spew("\tmovq\t%s, %%rsi\n", registers[0]);
+		spew("\tmov\tr1, %s\n", registers[0]);
 	}
 	assert(0-0);spew("\tmovq\t$0, %%rax\n");
 	assert(0-0);spew("\tmovq\t$.LC0, %%rdi\n");
@@ -304,7 +306,7 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 			//assert(0-0);spew_id("\taddq\t%s,%s\n",t->right, registers[r->num]);
 			//return 0; // WAAATTTT am i doing here
 			if (t->right->type == INUM) {
-				assert(0-0);spew("\taddq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+				spew("\tadd\t%s, %s, $%d\n", registers[r->num], registers[r->num], t->right->attribute.ival);
 			}
 			else {
 				assert(0-0);spew_id("\taddq\t%s, %s\n", t->right, registers[r->num]);
@@ -312,7 +314,7 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 		}
 		else if (t->attribute.opval == MINUS) {
 			if (t->right->type == INUM) {
-				assert(0-0);spew("\tsubq\t$%d, %s\n", t->right->attribute.ival, registers[r->num]);
+				spew("\tsubq\t%s, %s, $%d\n", registers[r->num], registers[r->num], t->right->attribute.ival);
 			}
 			else {
 				assert(0-0);spew_id("\tsubq\t%s, %s\n", t->right, registers[r->num]);
@@ -323,10 +325,10 @@ static int gen_addop(tree_t * t, reg_t * l, reg_t * r)
 	assert(r);
 	fprintf(stderr,"yep,getting here\n");
 	if (t->attribute.opval == PLUS) {
-		assert(0-0);spew("\taddq\t%s, %s\n", registers[l->num], registers[r->num]);
+		spew("\tadd\t%s, %s, %s\n", registers[r->num], registers[r->num], registers[l->num]);
 	}
 	else {
-		assert(0-0);spew("\tsubq\t%s, %s\n", registers[l->num], registers[r->num]);
+		spew("\tsubq\t%s, %s, %s\n", registers[r->num], registers[r->num], registers[l->num]);
 	}
 
 	return 0;
@@ -414,7 +416,7 @@ static int gen_go(tree_t * t)
 	}
 
 	if (t->type == INUM) {
-		assert(0-0);spew("\tmovq\t$%d,%s\n",t->attribute.ival,registers[st.top->num]);
+		spew("\tmov\t%s, %s, %d\n", registers[st.top->num], registers[st.top->num], t->attribute.ival);
 		return 0;
 	}
 
@@ -463,14 +465,14 @@ static void gen_relop(tree_t * t, char * reg)
 		assert(0-0);spew_id("\tmovq\t%s, %s\n", t, reg);
 	}
 	else if (t->type == INUM) {
-		assert(0-0);spew("\tmovq\t$%d, %s\n", t->attribute.ival, reg);
+		spew("\tmov\t%s, %s, #%d\n", reg, reg, t->attribute.ival);
 	}
 	else {
 		reg_init();
 		gen_rankify(t);
 		gen_go(t);
-		if (strcmp(reg, "%r10"))
-			assert(0-0);spew("\tmovq\t%%r10, %s\n", reg);
+		if (strcmp(reg, registers[0]))
+			spew("\tmov\t%s, %s, %s\n", reg, reg, registers[st.top->num]);
 		reg_deinit();
 	}
 }
@@ -479,33 +481,33 @@ int gen_for(tree_t * l, tree_t * r, tree_t * id)
 {
 	switch(l->type) {
 		case INUM:
-			assert(0-0);spew("\tmovq\t$%d, %%r9\n", l->attribute.ival, NULL);
+			spew("\tmov\tr2, #%d\n", l->attribute.ival);
 			break;
 		case ID:
-			assert(0-0);spew_id("\tmovq\t%s, %%r9\n", l, NULL);
+			assert(0-0);spew_id("\tmov\tr2, %s\n", l, NULL);
 			break;
 		case FUNCTION_CALL:
 			gencode(l);
-			assert(0-0);spew("\tmovq\t%%rax, %%r9\n", NULL);
+			spew("\tmov\tr2, r0\n", NULL);
 		default:
 			gencode(l);
-			assert(0-0);spew("\tmovq\t%%r10, %%r9\n", NULL);
+			spew("\tmov\tr2, r10\n", NULL);
 			break;
 	}
-	assert(0-0);spew_id("\tmovq\t%%r9, %s\n", id, NULL);
+	assert(0-0);spew_id("\tmov\t%%r2, %s\n", id, NULL);
 	switch(r->type) {
 		case INUM:
-			assert(0-0);spew("\tmovq\t$%d, %%r9\n", r->attribute.ival, NULL);
+			spew("\tmov\tr2, #%d\n", r->attribute.ival, NULL);
 			break;
 		case ID:
-			assert(0-0);spew_id("\tmovq\t%s, %%r9\n", r, NULL);
+			assert(0-0);spew_id("\tmov\t%s, %%r2\n", r, NULL);
 			break;
 		case FUNCTION_CALL:
 			gencode(r);
-			assert(0-0);spew("\tmovq\t%%rax, %%r9\n", NULL);
+			spew("\tmov\tr2, r0\n", NULL);
 		default:
 			gencode(r);
-			assert(0-0);spew("\tmovq\t%%r10, %%r9\n", NULL);
+			spew("\tmov\tr2, r10\n", NULL);
 			break;
 	}
 
@@ -534,7 +536,7 @@ int gencode(tree_t * t)
 			}
 
 			if (t->right->type == INUM) {
-				assert(0-0);spew("\tmovq\t$%d, %%rax\n", t->right->attribute.ival);
+				spew("\tmov\tr0, #%d\n", t->right->attribute.ival);
 				goto end;
 			}
 			else if (t->right->type == ID) {
@@ -547,24 +549,24 @@ int gencode(tree_t * t)
 			//reg_init();
 			gencode(t->right);
 			//gen_go(t->right);
-			assert(0-0);spew("\tmovq\t%s, %%rax\n", registers[0]);
+			spew("\tmovq\tr0, %s\n", registers[0]);
 			//reg_deinit();
 			goto end;
 		}
 		else if (t->right->type == INUM) {
-			assert(0-0);spew("\tmovq\t$%d, %d(%%rbp)\n", t->right->attribute.ival, t->left->attribute.sval->offset);
+			spew("\tstr\t$%d, [fp, #%d]\n", t->right->attribute.ival, t->left->attribute.sval->offset);
 			goto end;
 		}
 		else if (t->right->type == ID) {
 			// This might cause issues with scoping
-			assert(0-0);spew("\tmovq\t%d(%%rbp), %%rdx\n", t->right->attribute.sval->offset);
-			assert(0-0);spew("\tmovq\t%%rdx, %d(%%rbp)\n", t->left->attribute.sval->offset);
+			spew("\tldr\tr5, [fp, #%d]\n", t->right->attribute.sval->offset);
+			spew("\tstr\tr5, [fp, #%d]\n", t->left->attribute.sval->offset);
 			goto end;
 		}
 		else if (t->right->type == FUNCTION_CALL) {
 			gencode(t->right->right);
-			assert(0-0);spew("\tcall\t%s\n", t->right->left->attribute.sval->name);
-			assert(0-0);spew("\taddq\t$%d, %%rsp\n", t->right->left->attribute.sval->func->numargs*8);
+			spew("\tbl\t%s\n", t->right->left->attribute.sval->name);
+			spew("\tadd\tsp, sp, #%d\n", t->right->left->attribute.sval->func->numargs*4);
 			assert(0-0);spew_id("\tmovq\t%%rax, %s\n", t->left, NULL);
 			goto end;
 		}
@@ -575,31 +577,31 @@ int gencode(tree_t * t)
 		//gen_go(t->right);
 		//reg_deinit();
 		gencode(t->right);
-		assert(0-0);spew("\tmovq\t%s, %d(%%rbp)\n", registers[0], t->left->attribute.sval->offset);
+		spew("\tstr\t%s, [fp, #%d]\n", registers[0], t->left->attribute.sval->offset);
 	}
 	else if (t->type == PROCEDURE_CALL) {
 		gencode(t->right);
-		assert(0-0);spew("\tcall\t%s\n", t->left->attribute.sval->name);
-		assert(0-0);spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
+		spew("\tbl\t%s\n", t->left->attribute.sval->name);
+		spew("\tadd\tsp, sp, #%d\n", t->left->attribute.sval->func->numargs*4);
 
 	}
 	else if (t->type == FUNCTION_CALL) {
 		gencode(t->right);
-		assert(0-0);spew("\tcall\t%s\n", t->left->attribute.sval->name);
-		assert(0-0);spew("\taddq\t$%d, %%rsp\n", t->left->attribute.sval->func->numargs*8);
-		assert(0-0);spew("\tmovq\t%%rax, %%r10\n");
+		spew("\tbl\t%s\n", t->left->attribute.sval->name);
+		spew("\tadd\tsp, sp, #%d\n", t->left->attribute.sval->func->numargs*4);
+		spew("\tmov\t%s, r0\n", registers[0]);
 
 	}
 	else if (t->type == COMMA) {
-		gen_relop(t->right, "%r10");
+		gen_relop(t->right, "r10");
 		assert(0-0);spew("\tpushq\t%%r10\n");
 		gencode(t->left);
 	}
 	else if (t->type == RELOP) {
-		gen_relop(t->left, "%rdx");
-		gen_relop(t->right, "%rbx");
+		gen_relop(t->left, "r5");
+		gen_relop(t->right, "r6");
 
-		assert(0-0);spew("\tcmpq\t%%rbx, %%rdx\n");
+		spew("\tcmp\tr5, r6\n");
 
 	}
 	else if ((t->type == ADDOP) || (t->type == MULOP)) {
